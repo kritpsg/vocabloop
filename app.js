@@ -78,7 +78,7 @@ function load() {
   if (isJa()) { d.settings.newPerDay = 15; d.settings.autoFill = false; d.settings.dailyGoal = 25; d.plan = { start: Date.now(), offset: 0 }; }
   return d;
 }
-let pairing = false, syncTimer = null, syncBusy = false;
+let pairing = false, syncTimer = null, syncBusy = false, syncInfo = null;
 const KEY_RE = /^[\w.~+\/=-]{20,200}$/; // Gemini key (รวมรูปแบบใหม่ที่มีจุด)
 const SYNC_TOKEN = 'vocabApp.syncToken', SYNC_GIST = 'vocabApp.syncGist', SYNC_LAST = 'vocabApp.syncLast', SYNC_KEYFLAG = 'vocabApp.syncKey', KEY_AT = 'vocabApp.keyAt', KEY_SEEN = 'vocabApp.keySeen';
 const syncSig = new Map();
@@ -2802,6 +2802,8 @@ async function syncNow(refresh) {
       else gid = (await ghApi('/gists', { method: 'POST', body: JSON.stringify({ description: GIST_DESC, public: false, files }) })).id;
     }
     lsSet(SYNC_GIST, gid); lsSet(SYNC_LAST, String(Date.now()));
+    const learned = d => d && Array.isArray(d.cards) ? d.cards.filter(c => c.state !== 'new' || c.reps > 0).length : 0;
+    syncInfo = { en: learned(lang === 'en' ? db : od), ja: learned(lang === 'ja' ? db : od) };
     if (keyAdopted) { const ki = $('#key'); if (ki) ki.value = lsGet(LS_KEY) || ''; toast('ได้ Gemini key จากอีกเครื่องแล้ว ไม่ต้องใส่เอง'); }
     if (changedLocal && refresh) { curId = null; renderHud(); showTab(tab); toast('ซิงก์แล้ว: ได้ข้อมูลใหม่จากอีกเครื่อง'); }
     renderSyncPanel();
@@ -2812,7 +2814,8 @@ function renderSyncPanel() {
   const on = syncOn(); if (!$('#sync-off')) return;
   $('#sync-off').hidden = on; $('#sync-on').hidden = !on; const sk = $('#sync-key'); if (sk) sk.checked = lsGet(SYNC_KEYFLAG) !== '0';
   const last = +lsGet(SYNC_LAST) || 0;
-  if (on) syncStatus(last ? `✅ เปิดซิงก์อยู่ · ซิงก์ล่าสุด ${new Date(last).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}` : '✅ เปิดซิงก์อยู่ · ยังไม่เคยซิงก์สำเร็จ'); else syncStatus('ยังไม่ได้เปิดซิงก์');
+  if (on) syncStatus(last ? `✅ เปิดซิงก์อยู่ · ซิงก์ล่าสุด ${new Date(last).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}${syncInfo ? ` · การ์ดที่เรียนแล้วในคลาวด์ (รวมของทุกเครื่อง): อังกฤษ ${syncInfo.en}, ญี่ปุ่น ${syncInfo.ja}` : ''}` : '✅ เปิดซิงก์อยู่ · ยังไม่เคยซิงก์สำเร็จ'); else syncStatus('ยังไม่ได้เปิดซิงก์');
+  const w = $('#sync-warn'); if (w) { const local = /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname) || location.protocol === 'file:'; w.hidden = !local; w.textContent = `⚠️ คุณเปิดแอปผ่าน ${location.host || 'ไฟล์ในเครื่อง'} ซึ่งเก็บข้อมูลแยกจากเว็บจริง (${PUBLIC_URL}) การเรียนที่นี่จะไม่ขึ้นมือถือ ให้เปิดเว็บจริงบนคอมแทน แล้วใช้ "ลิงก์ย้ายเครื่อง" (ติ๊กรวมการ์ด + ความคืบหน้า) ย้ายข้อมูลเดิมไปครั้งเดียว`; }
 }
 document.addEventListener('visibilitychange', () => { if (syncOn()) syncNow(!document.hidden); });
 window.addEventListener('online', () => syncNow(false));
