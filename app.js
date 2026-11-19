@@ -79,7 +79,7 @@ function load() {
   return d;
 }
 let pairing = false, syncTimer = null, syncBusy = false;
-const SYNC_TOKEN = 'vocabApp.syncToken', SYNC_GIST = 'vocabApp.syncGist', SYNC_LAST = 'vocabApp.syncLast';
+const SYNC_TOKEN = 'vocabApp.syncToken', SYNC_GIST = 'vocabApp.syncGist', SYNC_LAST = 'vocabApp.syncLast', SYNC_KEYFLAG = 'vocabApp.syncKey', KEY_AT = 'vocabApp.keyAt', KEY_SEEN = 'vocabApp.keySeen';
 const syncSig = new Map();
 let db = load();
 function postLoad() {
@@ -876,7 +876,8 @@ document.addEventListener('click', async e => {
       lsSet(SYNC_TOKEN, tk); $('#sync-token').value = ''; renderSyncPanel(); syncNow(true); break;
     }
     case 'sync-now': syncNow(true); break;
-    case 'sync-off': if (confirm('ปิดซิงก์ในเครื่องนี้? (ข้อมูลที่อยู่บน Gist ยังอยู่ ลบเองได้ที่ gist.github.com)')) { lsDel(SYNC_TOKEN); lsDel(SYNC_GIST); lsDel(SYNC_LAST); clearTimeout(syncTimer); renderSyncPanel(); } break;
+    case 'sync-keyflag': lsSet(SYNC_KEYFLAG, t.checked ? '1' : '0'); syncNow(false); break;
+    case 'sync-off': if (confirm('ปิดซิงก์ในเครื่องนี้? (ข้อมูลที่อยู่บน Gist ยังอยู่ ลบเองได้ที่ gist.github.com)')) { lsDel(SYNC_TOKEN); lsDel(SYNC_GIST); lsDel(SYNC_LAST); lsDel(KEY_AT); lsDel(KEY_SEEN); clearTimeout(syncTimer); renderSyncPanel(); } break;
     case 'pair-make': pairMake(); break;
     case 'pair-copy': { const o = $('#pair-out'); o.select(); try { await navigator.clipboard.writeText(o.value); toast('คัดลอกลิงก์แล้ว'); } catch { document.execCommand('copy'); toast('คัดลอกลิงก์แล้ว'); } break; }
     case 'pair-share': try { await navigator.share({ title: 'VocabLoop', url: $('#pair-out').value }); } catch { } break;
@@ -2772,6 +2773,15 @@ async function syncNow(refresh) {
       const f = g && g.files && g.files[GIST_FILE];
       if (f) { remoteText = f.truncated ? await (await fetch(f.raw_url)).text() : f.content; try { remote = JSON.parse(remoteText); } catch { throw new Error('ข้อมูลบนคลาวด์เสีย (อ่านไม่ได้) — ไม่ได้เขียนทับให้'); } }
     }
+    // Gemini key (เปิดไว้เป็นค่าเริ่มต้น ปิดได้ในแผงซิงก์): ฝั่งที่ใส่/เปลี่ยนล่าสุดชนะ
+    let keyOut, keyAdopted = false;
+    if (lsGet(SYNC_KEYFLAG) !== '0') {
+      const lk = lsGet(LS_KEY) || '', rk = remote && remote.key;
+      if (lk && lk !== lsGet(KEY_SEEN)) { lsSet(KEY_AT, String(Date.now())); lsSet(KEY_SEEN, lk); }
+      const lat = +lsGet(KEY_AT) || 0;
+      if (rk && typeof rk.v === 'string' && /^[\w-]{20,100}$/.test(rk.v) && rk.v !== lk && (!lk || (+rk.t || 0) > lat)) { lsSet(LS_KEY, rk.v); lsSet(KEY_SEEN, rk.v); lsSet(KEY_AT, String(+rk.t || Date.now())); keyAdopted = true; }
+      const cur = lsGet(LS_KEY); keyOut = cur ? { v: cur, t: +lsGet(KEY_AT) || Date.now() } : (rk || undefined);
+    }
     const other = lang === 'en' ? 'ja' : 'en', okey = l => l === 'ja' ? 'vocabApp.ja.v1' : 'vocabApp.v1';
     const before = SYNC.stable(SYNC.canon(db));
     if (remote && remote[lang]) SYNC.mergeDb(db, remote[lang], uid);
@@ -2784,13 +2794,14 @@ async function syncNow(refresh) {
     const changedLocal = SYNC.stable(SYNC.canon(db)) !== before;
     if (changedLocal) { SYNC.snapshot(db.cards, syncSig); save(); } // snapshot ก่อน save เพื่อไม่ให้ผลรวมถูกประทับเวลาใหม่
     if (odChanged) lsSet(okey(other), JSON.stringify(od));
-    const body = SYNC.stable({ v: 1, en: SYNC.canon(lang === 'en' ? db : od), ja: SYNC.canon(lang === 'ja' ? db : od) });
+    const body = SYNC.stable({ v: 1, key: keyOut, en: SYNC.canon(lang === 'en' ? db : od), ja: SYNC.canon(lang === 'ja' ? db : od) });
     if (body !== remoteText) {
       const files = { [GIST_FILE]: { content: body } };
       if (gid) await ghApi('/gists/' + gid, { method: 'PATCH', body: JSON.stringify({ files }) });
       else gid = (await ghApi('/gists', { method: 'POST', body: JSON.stringify({ description: GIST_DESC, public: false, files }) })).id;
     }
     lsSet(SYNC_GIST, gid); lsSet(SYNC_LAST, String(Date.now()));
+    if (keyAdopted) { const ki = $('#key'); if (ki) ki.value = lsGet(LS_KEY) || ''; toast('ได้ Gemini key จากอีกเครื่องแล้ว ไม่ต้องใส่เอง'); }
     if (changedLocal && refresh) { curId = null; renderHud(); showTab(tab); toast('ซิงก์แล้ว: ได้ข้อมูลใหม่จากอีกเครื่อง'); }
     renderSyncPanel();
   } catch (e) { syncStatus('❌ ' + e.message, true); }
@@ -2798,7 +2809,7 @@ async function syncNow(refresh) {
 }
 function renderSyncPanel() {
   const on = syncOn(); if (!$('#sync-off')) return;
-  $('#sync-off').hidden = on; $('#sync-on').hidden = !on;
+  $('#sync-off').hidden = on; $('#sync-on').hidden = !on; const sk = $('#sync-key'); if (sk) sk.checked = lsGet(SYNC_KEYFLAG) !== '0';
   const last = +lsGet(SYNC_LAST) || 0;
   if (on) syncStatus(last ? `✅ เปิดซิงก์อยู่ · ซิงก์ล่าสุด ${new Date(last).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}` : '✅ เปิดซิงก์อยู่ · ยังไม่เคยซิงก์สำเร็จ'); else syncStatus('ยังไม่ได้เปิดซิงก์');
 }
@@ -2816,7 +2827,7 @@ const b64u = {
 async function streamBytes(u8, Ctor, mode) { const s = new Blob([u8]).stream().pipeThrough(new Ctor(mode)); return new Uint8Array(await new Response(s).arrayBuffer()); }
 async function pairEncode(withKey, withData) {
   const ls = {};
-  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!k || !k.startsWith('vocabApp.')) continue; if ((k === LS_KEY || k === SYNC_TOKEN) && !withKey) continue; if (k === SYNC_LAST) continue; if (PAIR_DB_KEYS.includes(k) && !withData) continue; ls[k] = localStorage.getItem(k); } } catch { }
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!k || !k.startsWith('vocabApp.')) continue; if ((k === LS_KEY || k === SYNC_TOKEN) && !withKey) continue; if (k === SYNC_LAST || k === KEY_AT || k === KEY_SEEN) continue; if (PAIR_DB_KEYS.includes(k) && !withData) continue; ls[k] = localStorage.getItem(k); } } catch { }
   const raw = new TextEncoder().encode(JSON.stringify({ v: 1, t: Date.now(), ls }));
   if (typeof CompressionStream === 'function') return 'g.' + b64u.enc(await streamBytes(raw, CompressionStream, 'gzip'));
   return 'r.' + b64u.enc(raw);
@@ -2831,7 +2842,7 @@ async function pairDecode(code) {
     if (k === LS_KEY && !/^[\w-]{20,100}$/.test(v)) { bad.push(k); continue; }
     if (k === SYNC_TOKEN && !/^(ghp|gho|github_pat)_[A-Za-z0-9_]{20,255}$/.test(v)) { bad.push(k); continue; }
     if (k === SYNC_GIST && !/^[0-9a-f]{20,40}$/.test(v)) { bad.push(k); continue; }
-    if (k === SYNC_LAST) { bad.push(k); continue; }
+    if (k === SYNC_LAST || k === KEY_AT || k === KEY_SEEN) { bad.push(k); continue; }
     if (PAIR_DB_KEYS.includes(k)) { try { const o = JSON.parse(v); if (!o || !Array.isArray(o.cards)) { bad.push(k); continue; } } catch { bad.push(k); continue; } }
     ls[k] = v;
   }
