@@ -90,7 +90,8 @@ function postLoad() { // ทำหลังโหลดฐานข้อมู�
   if (n) save();
 }
 postLoad();
-function save() { if (!lsSet(dataKey(), JSON.stringify(db))) toast('บันทึกไม่ได้ (พื้นที่เบราว์เซอร์เต็มหรือถูกปิดไว้)'); }
+let pairing = false;
+function save() { if (pairing) return; if (!lsSet(dataKey(), JSON.stringify(db))) toast('บันทึกไม่ได้ (พื้นที่เบราว์เซอร์เต็มหรือถูกปิดไว้)'); }
 function ensureToday() { const t = todayStr(); if (db.newToday.date !== t) db.newToday = { date: t, count: 0, bonus: 0 }; }
 function newLeft() { ensureToday(); return Math.max(0, db.settings.newPerDay + db.newToday.bonus - db.newToday.count); }
 const norm = w => String(w).trim().toLowerCase();
@@ -865,6 +866,9 @@ document.addEventListener('click', async e => {
       } catch (err) { keyStatus('❌ ' + err.message, true); }
       t.disabled = false; break;
     }
+    case 'pair-make': pairMake(); break;
+    case 'pair-copy': { const o = $('#pair-out'); o.select(); try { await navigator.clipboard.writeText(o.value); toast('คัดลอกลิงก์แล้ว'); } catch { document.execCommand('copy'); toast('คัดลอกลิงก์แล้ว'); } break; }
+    case 'pair-share': try { await navigator.share({ title: 'VocabLoop', url: $('#pair-out').value }); } catch { } break;
     case 'export': download(`vocabloop-backup-${todayStr()}.json`, JSON.stringify({ app: 'vocabloop', lang, cards: db.cards, log: db.log, settings: db.settings, passages: db.passages, reading: db.reading, attempts: db.attempts, snap: db.snap, rev: db.rev, sent: db.sent, gram: db.gram, course: db.course }, null, 1)); break;
     case 'restore-seed': {
       const have = new Set(db.cards.map(c => norm(c.word))); let n = 0;
@@ -2730,7 +2734,61 @@ function talkMic(btn) {
   if (ok) btn.disabled = true; else inp.placeholder = 'พิมพ์คำตอบ (ญี่ปุ่น / โรมาจิ / ไทย) หรือกดไมค์';
 }
 
+/* ---------- ย้ายเครื่อง: ลิงก์ #pair=… (key + การ์ด/ความคืบหน้า) ----------
+   ข้อมูลอยู่ใน "ส่วนหลัง #" ของลิงก์ ซึ่งเบราว์เซอร์ไม่ส่งไปที่เซิร์ฟเวอร์ (GitHub ไม่เห็น) แต่ใครมีลิงก์ก็ได้ key ไป
+   ฝั่งรับต้องกดยืนยันเสมอ และตรวจรูปแบบทุกอย่างก่อนเขียนลงเครื่อง */
+const PUBLIC_URL = 'https://kritpsg.github.io/vocabloop/', PAIR_DB_KEYS = ['vocabApp.v1', 'vocabApp.ja.v1'];
+const b64u = {
+  enc: u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
+  dec: t => { t = t.replace(/-/g, '+').replace(/_/g, '/'); const s = atob(t + '==='.slice((t.length + 3) % 4)); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+};
+async function streamBytes(u8, Ctor, mode) { const s = new Blob([u8]).stream().pipeThrough(new Ctor(mode)); return new Uint8Array(await new Response(s).arrayBuffer()); }
+async function pairEncode(withKey, withData) {
+  const ls = {};
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!k || !k.startsWith('vocabApp.')) continue; if (k === LS_KEY && !withKey) continue; if (PAIR_DB_KEYS.includes(k) && !withData) continue; ls[k] = localStorage.getItem(k); } } catch { }
+  const raw = new TextEncoder().encode(JSON.stringify({ v: 1, t: Date.now(), ls }));
+  if (typeof CompressionStream === 'function') return 'g.' + b64u.enc(await streamBytes(raw, CompressionStream, 'gzip'));
+  return 'r.' + b64u.enc(raw);
+}
+async function pairDecode(code) {
+  const kind = code.slice(0, 2); let u8 = b64u.dec(code.slice(2));
+  if (kind === 'g.') { if (typeof DecompressionStream !== 'function') throw new Error('เบราว์เซอร์นี้เก่าเกินไปสำหรับลิงก์แบบบีบอัด'); u8 = await streamBytes(u8, DecompressionStream, 'gzip'); } else if (kind !== 'r.') throw new Error('รูปแบบลิงก์ไม่ถูกต้อง');
+  const d = JSON.parse(new TextDecoder().decode(u8)); if (!d || d.v !== 1 || !d.ls || typeof d.ls !== 'object') throw new Error('ข้อมูลในลิงก์ไม่ถูกต้อง');
+  const ls = {}, bad = [];
+  for (const [k, v] of Object.entries(d.ls)) {
+    if (!/^vocabApp\.[A-Za-z0-9._-]{1,40}$/.test(k) || typeof v !== 'string' || v.length > 6e6) { bad.push(k); continue; }
+    if (k === LS_KEY && !/^[\w-]{20,100}$/.test(v)) { bad.push(k); continue; }
+    if (PAIR_DB_KEYS.includes(k)) { try { const o = JSON.parse(v); if (!o || !Array.isArray(o.cards)) { bad.push(k); continue; } } catch { bad.push(k); continue; } }
+    ls[k] = v;
+  }
+  return { ls, bad };
+}
+function pairBase() { return /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname) || location.protocol === 'file:' ? PUBLIC_URL : location.origin + location.pathname; }
+async function pairMake() {
+  const out = $('#pair-out'), info = $('#pair-info'); out.hidden = false; out.value = '';
+  const wk = $('#pair-key').checked, wd = $('#pair-data').checked;
+  if (wk && !lsGet(LS_KEY)) info.textContent = 'ยังไม่ได้ใส่ Gemini key ในเครื่องนี้ จะส่งเฉพาะส่วนอื่น';
+  const link = pairBase() + '#pair=' + await pairEncode(wk, wd);
+  out.value = link; info.textContent = `ลิงก์ยาว ${(link.length / 1024).toFixed(1)} KB · ${wk ? 'มี key' : 'ไม่มี key'} · ${wd ? 'มีการ์ด/ความคืบหน้า' : 'ไม่มีการ์ด'}${link.length > 8000 ? ' · ยาวมาก แอปแชตบางตัวอาจตัดลิงก์ ถ้าเปิดแล้วขึ้นว่าไม่ถูกต้อง ให้ใช้ "ส่งออกแบ็กอัป" แทน' : ''}`;
+  $('#pair-btns').hidden = false; $('#pair-share').hidden = !navigator.share; out.select();
+}
+async function pairCheck() {
+  const m = /^#pair=(.+)$/.exec(location.hash); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search); // ลบลิงก์ที่มี key ออกจากแถบที่อยู่/ประวัติทันที
+  let p; try { p = await pairDecode(m[1]); } catch (e) { return alert('เปิดลิงก์ย้ายเครื่องไม่ได้: ' + e.message); }
+  const ks = Object.keys(p.ls); if (!ks.length) return alert('ลิงก์นี้ไม่มีข้อมูลที่ใช้ได้' + (p.bad.length ? ' (ถูกตัดทิ้งเพราะรูปแบบไม่ถูกต้อง)' : ''));
+  const cnt = k => { try { return JSON.parse(p.ls[k]).cards.length; } catch { return 0; } };
+  const mine = (() => { let n = 0; for (const k of PAIR_DB_KEYS) { try { n += (JSON.parse(lsGet(k) || '{}').cards || []).filter(c => c.reps > 0).length; } catch { } } return n; })();
+  const lines = [LS_KEY in p.ls ? '• Gemini key' : '', p.ls['vocabApp.v1'] ? `• การ์ดอังกฤษ ${cnt('vocabApp.v1')} ใบ + ความคืบหน้า` : '', p.ls['vocabApp.ja.v1'] ? `• การ์ดญี่ปุ่น ${cnt('vocabApp.ja.v1')} ใบ + ความคืบหน้า` : '', ks.some(k => !PAIR_DB_KEYS.includes(k) && k !== LS_KEY) ? '• การตั้งค่าอื่นๆ' : ''].filter(Boolean).join('\n');
+  const warn = mine && ks.some(k => PAIR_DB_KEYS.includes(k)) ? `\n\n⚠️ เครื่องนี้มีการ์ดที่เคยเรียนแล้ว ${mine} ใบ จะถูกแทนที่ด้วยข้อมูลจากลิงก์ (ถ้าไม่แน่ใจ ให้กดยกเลิก แล้วส่งออกแบ็กอัปเก็บไว้ก่อน)` : '';
+  if (!confirm(`พบข้อมูลย้ายเครื่อง จะนำเข้า:\n${lines}${warn}\n\nนำเข้าตอนนี้ไหม? (ยกเลิก = ไม่เปลี่ยนอะไร)`)) return;
+  pairing = true;
+  for (const [k, v] of Object.entries(p.ls)) lsSet(k, v);
+  location.replace(location.pathname + location.search);
+}
+
 /* ---------- init ---------- */
+pairCheck();
 save(); applyLangUI(); renderHud(); showTab('study'); maybeAutoFill();
 // PWA: ติดตั้งลงหน้าจอโฮม/ใช้ออฟไลน์ ได้เมื่อเปิดผ่าน https หรือ localhost เท่านั้น
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

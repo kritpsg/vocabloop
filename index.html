@@ -14,7 +14,7 @@
 <title>VocabLoop – IELTS & DET Flashcards</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=44">
+<link rel="stylesheet" href="style.css?v=261119141451">
 </head>
 <body>
 <header class="top">
@@ -185,6 +185,20 @@
     </div>
 
     <div class="panel">
+      <h2>📱 ย้ายไปอีกเครื่อง (ไม่ต้องใส่ key ใหม่)</h2>
+      <p class="muted small">สร้างลิงก์ แล้วเปิดในมือถือ/คอมอีกเครื่อง แอปจะถามยืนยันแล้วนำ Gemini key กับการ์ดมาให้เลย ลิงก์นี้ <b>มี key ของคุณอยู่ข้างใน</b> ใครได้ลิงก์ก็ใช้ key ได้ ส่งให้ตัวเองเท่านั้น (เช่น ข้อความหาตัวเอง/โน้ตส่วนตัว) แล้วลบข้อความทิ้งหลังใช้ ถ้าหลุดให้ไปสร้าง key ใหม่ที่ Google AI Studio</p>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="pair-key" checked> รวม Gemini key</label>
+        <label class="chk"><input type="checkbox" id="pair-data" checked> รวมการ์ด + ความคืบหน้า (อังกฤษและญี่ปุ่น)</label>
+      </div>
+      <div class="row"><button class="btn primary" data-act="pair-make">สร้างลิงก์ย้ายเครื่อง</button></div>
+      <textarea id="pair-out" rows="3" readonly hidden style="width:100%;margin-top:8px"></textarea>
+      <p id="pair-info" class="status" role="status"></p>
+      <div class="row" id="pair-btns" hidden><button class="btn" data-act="pair-copy">คัดลอกลิงก์</button><button class="btn" id="pair-share" data-act="pair-share" hidden>แชร์…</button></div>
+      <p class="muted small">เครื่องปลายทางต้องเปิดผ่านลิงก์ของเว็บ (https) แล้วเลือกนำเข้า ข้อมูลสองเครื่องจะ <b>ไม่ซิงก์ต่อเนื่อง</b> ต้องกดย้ายใหม่เมื่ออยากอัปเดตอีกเครื่อง</p>
+    </div>
+
+    <div class="panel">
       <h2>ข้อมูล</h2>
       <div class="row">
         <button class="btn" data-act="export">ส่งออกแบ็กอัป (JSON)</button>
@@ -259,12 +273,12 @@
 </dialog>
 
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="seed.js?v=44"></script>
-<script src="seed_th.js?v=44"></script>
-<script src="grammar_course.js?v=44"></script>
-<script src="awl.js?v=44"></script>
-<script src="reading_seed.js?v=44"></script>
-<script src="ja_data.js?v=44"></script>
-<script src="app.js?v=44"></script>
+<script src="seed.js?v=261119141451"></script>
+<script src="seed_th.js?v=261119141451"></script>
+<script src="grammar_course.js?v=261119141451"></script>
+<script src="awl.js?v=261119141451"></script>
+<script src="reading_seed.js?v=261119141451"></script>
+<script src="ja_data.js?v=261119141451"></script>
+<script src="app.js?v=261119141451"></script>
 </body>
 </html>
