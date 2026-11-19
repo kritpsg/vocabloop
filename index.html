@@ -14,7 +14,7 @@
 <title>VocabLoop – IELTS & DET Flashcards</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=261119153204">
+<link rel="stylesheet" href="style.css?v=261119211709">
 </head>
 <body>
 <header class="top">
@@ -186,7 +186,7 @@
 
     <div class="panel">
       <h2>🔄 ซิงก์คอม ⇄ มือถืออัตโนมัติ</h2>
-      <p class="muted small">เก็บความคืบหน้า (การ์ด การทบทวน ประวัติ คอร์ส) ไว้ใน <b>Gist ส่วนตัวของบัญชี GitHub คุณเอง</b> ทุกเครื่องที่เปิดซิงก์จะดึง/รวม/อัปให้เองเมื่อเปิดแอปและหลังเรียนเสร็จ ไม่ทับกัน (Gemini key ซิงก์ด้วยตามตัวเลือกด้านล่าง) การตั้งค่าบางอย่าง เช่น เสียง/จำนวนคำใหม่ต่อวัน แยกกันแต่ละเครื่อง</p>
+      <p class="muted small">เก็บความคืบหน้า (การ์ด การทบทวน ประวัติ คอร์ส) ไว้ใน <b>Gist ส่วนตัวของบัญชี GitHub คุณเอง</b> ทุกเครื่องที่เปิดซิงก์จะดึง/รวม/อัปให้เองเมื่อเปิดแอปและหลังเรียนเสร็จ ไม่ทับกัน (Gemini key ไม่อัปขึ้นคลาวด์) การตั้งค่าบางอย่าง เช่น เสียง/จำนวนคำใหม่ต่อวัน แยกกันแต่ละเครื่อง</p>
       <div id="sync-off">
         <ol class="small" style="line-height:1.7;padding-left:18px;margin:6px 0">
           <li>เปิด <a href="https://github.com/settings/tokens/new?scopes=gist&description=VocabLoop%20sync" target="_blank" rel="noopener">หน้าสร้างโทเคน GitHub</a> (ติ๊กไว้แค่ <code>gist</code> อย่างเดียว) เลือกวันหมดอายุตามต้องการ แล้วกด Generate token</li>
@@ -195,11 +195,10 @@
         </ol>
         <div class="row"><input id="sync-token" type="password" autocomplete="off" placeholder="วางโทเคน ghp_…" style="flex:1;min-width:0"><button class="btn primary" data-act="sync-on">เปิดซิงก์</button></div>
       </div>
-      <label class="chk" style="display:block;margin:8px 0"><input type="checkbox" id="sync-key" data-act="sync-keyflag" checked> ซิงก์ Gemini key ด้วย (เก็บเป็นข้อความธรรมดาใน Gist ส่วนตัวของคุณ ใครมีโทเคนซิงก์ก็อ่านได้ ถ้าไม่สบายใจให้ติ๊กออก แล้วใช้ลิงก์ย้ายเครื่องแทน)</label>
+      <p class="muted small"><b>Gemini key ไม่ถูกอัปขึ้นคลาวด์</b> (เคยทำ แล้ว Google สแกนเจอแล้วเพิกถอน key) ใช้ "สร้างลิงก์ย้ายเครื่อง" ด้านล่างเพื่อพา key ไปอีกเครื่อง</p>
       <div id="sync-on" class="row" hidden><button class="btn primary" data-act="sync-now">ซิงก์เดี๋ยวนี้</button><button class="btn danger" data-act="sync-off">ปิดซิงก์ในเครื่องนี้</button></div>
       <p id="sync-status" class="status" role="status"></p>
       <p id="sync-warn" class="status err" role="alert" hidden></p>
-      <p id="sync-keyhint" class="status err" role="alert" hidden>⚠️ เครื่องนี้ไม่มี Gemini key และปิดซิงก์ key ไว้ ติ๊ก "ซิงก์ Gemini key ด้วย" ด้านบน แล้วกด "ซิงก์เดี๋ยวนี้" key จะมาจากอีกเครื่องเอง</p>
       <p id="sync-ver" class="muted small"></p>
       <p class="muted small">โทเคนมีสิทธิ์แค่ Gist ใครได้โทเคนไปอ่าน/แก้ Gist ของคุณได้ จึงอย่าส่งต่อ ถ้าหลุดให้ลบโทเคนที่ github.com/settings/tokens</p>
     </div>
@@ -293,13 +292,13 @@
 </dialog>
 
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="sync.js?v=261119153204"></script>
-<script src="seed.js?v=261119153204"></script>
-<script src="seed_th.js?v=261119153204"></script>
-<script src="grammar_course.js?v=261119153204"></script>
-<script src="awl.js?v=261119153204"></script>
-<script src="reading_seed.js?v=261119153204"></script>
-<script src="ja_data.js?v=261119153204"></script>
-<script src="app.js?v=261119153204"></script>
+<script src="sync.js?v=261119211709"></script>
+<script src="seed.js?v=261119211709"></script>
+<script src="seed_th.js?v=261119211709"></script>
+<script src="grammar_course.js?v=261119211709"></script>
+<script src="awl.js?v=261119211709"></script>
+<script src="reading_seed.js?v=261119211709"></script>
+<script src="ja_data.js?v=261119211709"></script>
+<script src="app.js?v=261119211709"></script>
 </body>
 </html>

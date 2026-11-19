@@ -877,7 +877,6 @@ document.addEventListener('click', async e => {
       lsSet(SYNC_TOKEN, tk); $('#sync-token').value = ''; renderSyncPanel(); syncNow(true); break;
     }
     case 'sync-now': syncNow(true); break;
-    case 'sync-keyflag': lsSet(SYNC_KEYFLAG, t.checked ? '1' : '0'); syncNow(false); break;
     case 'sync-off': if (confirm('ปิดซิงก์ในเครื่องนี้? (ข้อมูลที่อยู่บน Gist ยังอยู่ ลบเองได้ที่ gist.github.com)')) { lsDel(SYNC_TOKEN); lsDel(SYNC_GIST); lsDel(SYNC_LAST); lsDel(KEY_AT); lsDel(KEY_SEEN); clearTimeout(syncTimer); renderSyncPanel(); } break;
     case 'pair-make': pairMake(); break;
     case 'pair-copy': { const o = $('#pair-out'); o.select(); try { await navigator.clipboard.writeText(o.value); toast('คัดลอกลิงก์แล้ว'); } catch { document.execCommand('copy'); toast('คัดลอกลิงก์แล้ว'); } break; }
@@ -2774,15 +2773,7 @@ async function syncNow(refresh) {
       const f = g && g.files && g.files[GIST_FILE];
       if (f) { remoteText = f.truncated ? await (await fetch(f.raw_url)).text() : f.content; try { remote = JSON.parse(remoteText); } catch { throw new Error('ข้อมูลบนคลาวด์เสีย (อ่านไม่ได้) — ไม่ได้เขียนทับให้'); } }
     }
-    // Gemini key (เปิดไว้เป็นค่าเริ่มต้น ปิดได้ในแผงซิงก์): ฝั่งที่ใส่/เปลี่ยนล่าสุดชนะ
-    let keyOut, keyAdopted = false;
-    if (lsGet(SYNC_KEYFLAG) !== '0') {
-      const lk = lsGet(LS_KEY) || '', rk = remote && remote.key;
-      if (lk && lk !== lsGet(KEY_SEEN)) { lsSet(KEY_AT, String(Date.now())); lsSet(KEY_SEEN, lk); }
-      const lat = +lsGet(KEY_AT) || 0;
-      if (rk && typeof rk.v === 'string' && KEY_RE.test(rk.v) && rk.v !== lk && (!lk || (+rk.t || 0) > lat)) { lsSet(LS_KEY, rk.v); lsSet(KEY_SEEN, rk.v); lsSet(KEY_AT, String(+rk.t || Date.now())); keyAdopted = true; }
-      const cur = lsGet(LS_KEY); keyOut = cur ? { v: cur, t: +lsGet(KEY_AT) || Date.now() } : (rk || undefined);
-    }
+    // ความปลอดภัย: ไม่เคยอัป Gemini key ขึ้นคลาวด์ (เคยทำแล้ว Google สแกนเจอและเพิกถอน key) ถ้าคลาวด์ยังมี key ค้างจากเวอร์ชันเก่า การเขียนรอบนี้จะลบออกจากไฟล์ล่าสุด
     const other = lang === 'en' ? 'ja' : 'en', okey = l => l === 'ja' ? 'vocabApp.ja.v1' : 'vocabApp.v1';
     const before = SYNC.stable(SYNC.canon(db));
     if (remote && remote[lang]) SYNC.mergeDb(db, remote[lang], uid);
@@ -2795,7 +2786,7 @@ async function syncNow(refresh) {
     const changedLocal = SYNC.stable(SYNC.canon(db)) !== before;
     if (changedLocal) { SYNC.snapshot(db.cards, syncSig); save(); } // snapshot ก่อน save เพื่อไม่ให้ผลรวมถูกประทับเวลาใหม่
     if (odChanged) lsSet(okey(other), JSON.stringify(od));
-    const body = SYNC.stable({ v: 1, key: keyOut, en: SYNC.canon(lang === 'en' ? db : od), ja: SYNC.canon(lang === 'ja' ? db : od) });
+    const body = SYNC.stable({ v: 1, en: SYNC.canon(lang === 'en' ? db : od), ja: SYNC.canon(lang === 'ja' ? db : od) });
     if (body !== remoteText) {
       const files = { [GIST_FILE]: { content: body } };
       if (gid) await ghApi('/gists/' + gid, { method: 'PATCH', body: JSON.stringify({ files }) });
@@ -2804,7 +2795,6 @@ async function syncNow(refresh) {
     lsSet(SYNC_GIST, gid); lsSet(SYNC_LAST, String(Date.now()));
     const learned = d => d && Array.isArray(d.cards) ? d.cards.filter(c => c.state !== 'new' || c.reps > 0).length : 0;
     syncInfo = { en: learned(lang === 'en' ? db : od), ja: learned(lang === 'ja' ? db : od) };
-    if (keyAdopted) { const ki = $('#key'); if (ki) ki.value = lsGet(LS_KEY) || ''; toast('ได้ Gemini key จากอีกเครื่องแล้ว ไม่ต้องใส่เอง'); }
     if (changedLocal && refresh) { curId = null; renderHud(); showTab(tab); toast('ซิงก์แล้ว: ได้ข้อมูลใหม่จากอีกเครื่อง'); }
     renderSyncPanel();
   } catch (e) { syncStatus('❌ ' + e.message, true); }
@@ -2812,10 +2802,9 @@ async function syncNow(refresh) {
 }
 function renderSyncPanel() {
   const on = syncOn(); if (!$('#sync-off')) return;
-  $('#sync-off').hidden = on; $('#sync-on').hidden = !on; const sk = $('#sync-key'); if (sk) sk.checked = lsGet(SYNC_KEYFLAG) !== '0';
+  $('#sync-off').hidden = on; $('#sync-on').hidden = !on; 
   const last = +lsGet(SYNC_LAST) || 0;
   if (on) syncStatus(last ? `✅ เปิดซิงก์อยู่ · ซิงก์ล่าสุด ${new Date(last).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}${syncInfo ? ` · การ์ดที่เรียนแล้วในคลาวด์ (รวมของทุกเครื่อง): อังกฤษ ${syncInfo.en}, ญี่ปุ่น ${syncInfo.ja}` : ''}` : '✅ เปิดซิงก์อยู่ · ยังไม่เคยซิงก์สำเร็จ'); else syncStatus('ยังไม่ได้เปิดซิงก์');
-  const kh = $('#sync-keyhint'); if (kh) kh.hidden = !(on && lsGet(SYNC_KEYFLAG) === '0' && !lsGet(LS_KEY));
   const sv = $('#sync-ver'); if (sv) { const sc = [...document.scripts].find(x => /app\.js/.test(x.src)); sv.textContent = 'เวอร์ชันแอปในเครื่องนี้: ' + ((sc && /v=(\d+)/.exec(sc.src) || [])[1] || '-'); }
   const w = $('#sync-warn'); if (w) { const local = /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname) || location.protocol === 'file:'; w.hidden = !local; w.textContent = `⚠️ คุณเปิดแอปผ่าน ${location.host || 'ไฟล์ในเครื่อง'} ซึ่งเก็บข้อมูลแยกจากเว็บจริง (${PUBLIC_URL}) การเรียนที่นี่จะไม่ขึ้นมือถือ ให้เปิดเว็บจริงบนคอมแทน แล้วใช้ "ลิงก์ย้ายเครื่อง" (ติ๊กรวมการ์ด + ความคืบหน้า) ย้ายข้อมูลเดิมไปครั้งเดียว`; }
 }
@@ -2883,6 +2872,7 @@ async function pairCheck() {
 pairCheck();
 save(); applyLangUI(); renderHud(); showTab('study'); maybeAutoFill();
 // PWA: ติดตั้งลงหน้าจอโฮม/ใช้ออฟไลน์ ได้เมื่อเปิดผ่าน https หรือ localhost เท่านั้น
+['vocabApp.syncKey', 'vocabApp.keyAt', 'vocabApp.keySeen'].forEach(lsDel);
 if (syncOn()) setTimeout(() => syncNow(true), 800);
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => { });
