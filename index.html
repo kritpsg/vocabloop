@@ -14,7 +14,7 @@
 <title>VocabLoop – IELTS & DET Flashcards</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=261119141451">
+<link rel="stylesheet" href="style.css?v=261119143032">
 </head>
 <body>
 <header class="top">
@@ -185,11 +185,27 @@
     </div>
 
     <div class="panel">
+      <h2>🔄 ซิงก์คอม ⇄ มือถืออัตโนมัติ</h2>
+      <p class="muted small">เก็บความคืบหน้า (การ์ด การทบทวน ประวัติ คอร์ส) ไว้ใน <b>Gist ส่วนตัวของบัญชี GitHub คุณเอง</b> ทุกเครื่องที่เปิดซิงก์จะดึง/รวม/อัปให้เองเมื่อเปิดแอปและหลังเรียนเสร็จ ไม่ทับกัน (Gemini key ไม่ถูกอัปขึ้นคลาวด์) การตั้งค่าบางอย่าง เช่น เสียง/จำนวนคำใหม่ต่อวัน แยกกันแต่ละเครื่อง</p>
+      <div id="sync-off">
+        <ol class="small" style="line-height:1.7;padding-left:18px;margin:6px 0">
+          <li>เปิด <a href="https://github.com/settings/tokens/new?scopes=gist&description=VocabLoop%20sync" target="_blank" rel="noopener">หน้าสร้างโทเคน GitHub</a> (ติ๊กไว้แค่ <code>gist</code> อย่างเดียว) เลือกวันหมดอายุตามต้องการ แล้วกด Generate token</li>
+          <li>คัดลอกโทเคน (ขึ้นต้น <code>ghp_</code>) มาวางที่ช่องด้านล่าง แล้วกดเปิดซิงก์</li>
+          <li>ที่เครื่องอื่น: ใช้ปุ่ม "สร้างลิงก์ย้ายเครื่อง" ด้านล่าง (ติ๊กรวม key/โทเคน) เปิดลิงก์ครั้งเดียวก็ซิงก์เองได้เลย</li>
+        </ol>
+        <div class="row"><input id="sync-token" type="password" autocomplete="off" placeholder="วางโทเคน ghp_…" style="flex:1;min-width:0"><button class="btn primary" data-act="sync-on">เปิดซิงก์</button></div>
+      </div>
+      <div id="sync-on" class="row" hidden><button class="btn primary" data-act="sync-now">ซิงก์เดี๋ยวนี้</button><button class="btn danger" data-act="sync-off">ปิดซิงก์ในเครื่องนี้</button></div>
+      <p id="sync-status" class="status" role="status"></p>
+      <p class="muted small">โทเคนมีสิทธิ์แค่ Gist ใครได้โทเคนไปอ่าน/แก้ Gist ของคุณได้ จึงอย่าส่งต่อ ถ้าหลุดให้ลบโทเคนที่ github.com/settings/tokens</p>
+    </div>
+
+    <div class="panel">
       <h2>📱 ย้ายไปอีกเครื่อง (ไม่ต้องใส่ key ใหม่)</h2>
       <p class="muted small">สร้างลิงก์ แล้วเปิดในมือถือ/คอมอีกเครื่อง แอปจะถามยืนยันแล้วนำ Gemini key กับการ์ดมาให้เลย ลิงก์นี้ <b>มี key ของคุณอยู่ข้างใน</b> ใครได้ลิงก์ก็ใช้ key ได้ ส่งให้ตัวเองเท่านั้น (เช่น ข้อความหาตัวเอง/โน้ตส่วนตัว) แล้วลบข้อความทิ้งหลังใช้ ถ้าหลุดให้ไปสร้าง key ใหม่ที่ Google AI Studio</p>
       <div class="row">
-        <label class="chk"><input type="checkbox" id="pair-key" checked> รวม Gemini key</label>
-        <label class="chk"><input type="checkbox" id="pair-data" checked> รวมการ์ด + ความคืบหน้า (อังกฤษและญี่ปุ่น)</label>
+        <label class="chk"><input type="checkbox" id="pair-key" checked> รวม Gemini key + โทเคนซิงก์</label>
+        <label class="chk"><input type="checkbox" id="pair-data"> รวมการ์ด + ความคืบหน้า (ไม่ต้องติ๊กถ้าเปิดซิงก์ไว้ ลิงก์จะสั้นลงมาก)</label>
       </div>
       <div class="row"><button class="btn primary" data-act="pair-make">สร้างลิงก์ย้ายเครื่อง</button></div>
       <textarea id="pair-out" rows="3" readonly hidden style="width:100%;margin-top:8px"></textarea>
@@ -273,12 +289,13 @@
 </dialog>
 
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="seed.js?v=261119141451"></script>
-<script src="seed_th.js?v=261119141451"></script>
-<script src="grammar_course.js?v=261119141451"></script>
-<script src="awl.js?v=261119141451"></script>
-<script src="reading_seed.js?v=261119141451"></script>
-<script src="ja_data.js?v=261119141451"></script>
-<script src="app.js?v=261119141451"></script>
+<script src="sync.js?v=261119143032"></script>
+<script src="seed.js?v=261119143032"></script>
+<script src="seed_th.js?v=261119143032"></script>
+<script src="grammar_course.js?v=261119143032"></script>
+<script src="awl.js?v=261119143032"></script>
+<script src="reading_seed.js?v=261119143032"></script>
+<script src="ja_data.js?v=261119143032"></script>
+<script src="app.js?v=261119143032"></script>
 </body>
 </html>

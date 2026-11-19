@@ -78,8 +78,12 @@ function load() {
   if (isJa()) { d.settings.newPerDay = 15; d.settings.autoFill = false; d.settings.dailyGoal = 25; d.plan = { start: Date.now(), offset: 0 }; }
   return d;
 }
+let pairing = false, syncTimer = null, syncBusy = false;
+const SYNC_TOKEN = 'vocabApp.syncToken', SYNC_GIST = 'vocabApp.syncGist', SYNC_LAST = 'vocabApp.syncLast';
+const syncSig = new Map();
 let db = load();
-function postLoad() { // ทำหลังโหลดฐานข้อมูลทุกครั้ง (ตอนเปิดแอป และตอนสลับภาษา)
+function postLoad() {
+  SYNC.snapshot(db.cards, syncSig); db.del = db.del || {}; // ทำหลังโหลดฐานข้อมูลทุกครั้ง (ตอนเปิดแอป และตอนสลับภาษา)
   db.gram = { topics: {}, miss: [], ...(db.gram || {}) }; db.course = { done: {}, tense: {}, asked: 0, ...(db.course || {}) }; db.snap = db.snap || {}; db.rev = db.rev || {}; db.sent = Array.isArray(db.sent) ? db.sent : [];
   if (isJa()) { if (!db.plan) db.plan = { start: Date.now(), offset: 0 }; return; }
   // ผู้ใช้อังกฤษเดิม: เติมคำแปลประโยคให้คำเริ่มต้น (เฉพาะที่ประโยคตรงกับต้นฉบับ ไม่ทับที่ผู้ใช้แก้เอง)
@@ -90,11 +94,11 @@ function postLoad() { // ทำหลังโหลดฐานข้อมู�
   if (n) save();
 }
 postLoad();
-let pairing = false;
-function save() { if (pairing) return; if (!lsSet(dataKey(), JSON.stringify(db))) toast('บันทึกไม่ได้ (พื้นที่เบราว์เซอร์เต็มหรือถูกปิดไว้)'); }
+function save() { if (pairing) return; SYNC.stamp(db.cards, syncSig, Date.now()); if (!lsSet(dataKey(), JSON.stringify(db))) toast('บันทึกไม่ได้ (พื้นที่เบราว์เซอร์เต็มหรือถูกปิดไว้)'); syncDirty(); }
 function ensureToday() { const t = todayStr(); if (db.newToday.date !== t) db.newToday = { date: t, count: 0, bonus: 0 }; }
 function newLeft() { ensureToday(); return Math.max(0, db.settings.newPerDay + db.newToday.bonus - db.newToday.count); }
 const norm = w => String(w).trim().toLowerCase();
+const tomb = c => { db.del = db.del || {}; db.del[SYNC.ck(c)] = Date.now(); }; // ป้ายหลุมศพ: บอกอีกเครื่องว่าการ์ดนี้ถูกลบ
 
 /* ---------- scheduler (SM-2 แบบง่าย คล้าย Anki) ---------- */
 // rating: 1 Again, 2 Hard, 3 Good, 4 Easy
@@ -665,7 +669,7 @@ function renderSettings() {
     <div><b>${streak()}</b><span>วันติดต่อกัน</span></div><div><b>${db.stats.games}</b><span>รอบเกมที่เล่น</span></div></div>
     <h2 style="margin-top:18px">เหรียญรางวัล ${Object.keys(db.badges).length}/${visBadges().length}</h2>
     <div class="badges">${visBadges().map(b => `<div class="badge-i ${db.badges[b.id] ? 'got' : ''}" title="${esc(b.desc)}"><span>${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('')}</div>`;
-  $('#key').value = lsGet(LS_KEY) || '';
+  $('#key').value = lsGet(LS_KEY) || ''; renderSyncPanel();
   $('#model').value = db.settings.model; $('#newPerDay').value = db.settings.newPerDay; $('#autoSpeak').checked = db.settings.autoSpeak;
   $('#showRo').checked = db.settings.showRo; $('#recall').value = db.settings.recall || 'mixed'; $('#dailyGoal').value = db.settings.dailyGoal; $('#sound').checked = db.settings.sound; $('#autoFill').checked = db.settings.autoFill;
 }
@@ -807,7 +811,7 @@ document.addEventListener('click', async e => {
     case 'pick-make': makeFromPicks(t.dataset.host, t); break;
     case 'pick-clear': clearPicks(t.dataset.host); break;
     case 'pick-undo': {
-      const ids = new Set((t.dataset.ids || '').split(',')); db.cards = db.cards.filter(c => !ids.has(c.id));
+      const ids = new Set((t.dataset.ids || '').split(',')); db.cards.filter(c => ids.has(c.id)).forEach(tomb); db.cards = db.cards.filter(c => !ids.has(c.id));
       save(); const box = t.closest('.pres'); if (box) box.innerHTML = '<div class="pr muted">ลบการ์ดที่เพิ่งสร้างแล้ว</div>'; break;
     }
     case 'bulk-exth': bulkTranslate(t); break;
@@ -829,7 +833,7 @@ document.addEventListener('click', async e => {
     case 'ai-fill': dlgAiFill(); break;
     case 'del-card':
       if (editingId && confirm('ลบการ์ดนี้ถาวร?')) {
-        db.cards = db.cards.filter(c => c.id !== editingId); if (curId === editingId) curId = null;
+        db.cards.filter(c => c.id === editingId).forEach(tomb); db.cards = db.cards.filter(c => c.id !== editingId); if (curId === editingId) curId = null;
         save(); $('#dlg').close(); renderLibraryList(); toast('ลบแล้ว');
       } break;
     case 'ai-all': { const all = aiItems.some(x => !x.checked); aiItems.forEach(x => x.checked = all); renderResults(); break; }
@@ -866,6 +870,13 @@ document.addEventListener('click', async e => {
       } catch (err) { keyStatus('❌ ' + err.message, true); }
       t.disabled = false; break;
     }
+    case 'sync-on': {
+      const tk = ($('#sync-token').value || '').trim();
+      if (!/^(ghp|gho|github_pat)_[A-Za-z0-9_]{20,255}$/.test(tk)) { toast('โทเคนไม่ถูกรูปแบบ (ต้องขึ้นต้น ghp_ หรือ github_pat_)'); break; }
+      lsSet(SYNC_TOKEN, tk); $('#sync-token').value = ''; renderSyncPanel(); syncNow(true); break;
+    }
+    case 'sync-now': syncNow(true); break;
+    case 'sync-off': if (confirm('ปิดซิงก์ในเครื่องนี้? (ข้อมูลที่อยู่บน Gist ยังอยู่ ลบเองได้ที่ gist.github.com)')) { lsDel(SYNC_TOKEN); lsDel(SYNC_GIST); lsDel(SYNC_LAST); clearTimeout(syncTimer); renderSyncPanel(); } break;
     case 'pair-make': pairMake(); break;
     case 'pair-copy': { const o = $('#pair-out'); o.select(); try { await navigator.clipboard.writeText(o.value); toast('คัดลอกลิงก์แล้ว'); } catch { document.execCommand('copy'); toast('คัดลอกลิงก์แล้ว'); } break; }
     case 'pair-share': try { await navigator.share({ title: 'VocabLoop', url: $('#pair-out').value }); } catch { } break;
@@ -878,7 +889,7 @@ document.addEventListener('click', async e => {
     case 'reset-progress':
       if (confirm('รีเซ็ตความคืบหน้าทุกการ์ดกลับเป็น "ใหม่"? (คำศัพท์ยังอยู่)')) {
         db.cards.forEach(c => Object.assign(c, { state: 'new', step: 0, due: 0, ivl: 0, ease: 2.5, reps: 0, lapses: 0 }));
-        db.log = {}; lastUndo = null; curId = null; save(); renderSettings(); toast('รีเซ็ตแล้ว');
+        db.log = {}; db.resetAt = Date.now(); lastUndo = null; curId = null; save(); renderSettings(); toast('รีเซ็ตแล้ว');
       } break;
   }
 });
@@ -2734,6 +2745,66 @@ function talkMic(btn) {
   if (ok) btn.disabled = true; else inp.placeholder = 'พิมพ์คำตอบ (ญี่ปุ่น / โรมาจิ / ไทย) หรือกดไมค์';
 }
 
+/* ---------- ซิงก์คอม ⇄ มือถือ ผ่าน GitHub Gist ส่วนตัว (secret) ของผู้ใช้เอง ----------
+   ใช้โทเคนที่มีสิทธิ์ "gist" อย่างเดียว เก็บในเบราว์เซอร์แต่ละเครื่อง (เหมือน Gemini key) · ไม่อัป Gemini key ขึ้นคลาวด์
+   ทุกครั้งที่ซิงก์: ดึงของอีกเครื่อง → รวม (sync.js) → อัปกลับ  จึงแก้พร้อมกันสองเครื่องได้โดยไม่ทับกัน */
+const GIST_DESC = 'VocabLoop sync (do not edit)', GIST_FILE = 'vocabloop.json';
+function syncOn() { return !!lsGet(SYNC_TOKEN); }
+function syncStatus(msg, err) { const s = $('#sync-status'); if (s) { s.textContent = msg; s.classList.toggle('err', !!err); } }
+function syncDirty() { if (!syncOn() || pairing) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 25000); }
+async function ghApi(path, opt = {}) {
+  let r;
+  try { r = await fetch('https://api.github.com' + path, { ...opt, headers: { Authorization: 'Bearer ' + lsGet(SYNC_TOKEN), Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } }); }
+  catch { throw new Error('ต่อ GitHub ไม่ได้ (ไม่มีอินเทอร์เน็ต?) แอปจะลองใหม่ภายหลัง'); }
+  if (r.status === 401) throw new Error('โทเคนไม่ถูกต้องหรือหมดอายุ — สร้างโทเคนใหม่แล้ววางอีกครั้ง');
+  if (r.status === 403 || r.status === 429) throw new Error('GitHub จำกัดการเรียกชั่วคราว ลองใหม่อีกสักครู่');
+  if (!r.ok) throw new Error('GitHub ตอบ HTTP ' + r.status);
+  return r.json();
+}
+async function findGist() { const list = await ghApi('/gists?per_page=100'); const g = list.find(x => x.description === GIST_DESC && x.files && x.files[GIST_FILE]); return g ? g.id : null; }
+async function syncNow(refresh) {
+  if (!syncOn() || syncBusy || pairing) return; syncBusy = true; clearTimeout(syncTimer); syncStatus('กำลังซิงก์…');
+  try {
+    save();
+    let gid = lsGet(SYNC_GIST) || await findGist(), remote = null, remoteText = '';
+    if (gid) {
+      let g; try { g = await ghApi('/gists/' + gid); } catch (e) { if (/HTTP 404/.test(e.message)) { lsDel(SYNC_GIST); gid = await findGist(); g = gid ? await ghApi('/gists/' + gid) : null; } else throw e; }
+      const f = g && g.files && g.files[GIST_FILE];
+      if (f) { remoteText = f.truncated ? await (await fetch(f.raw_url)).text() : f.content; try { remote = JSON.parse(remoteText); } catch { throw new Error('ข้อมูลบนคลาวด์เสีย (อ่านไม่ได้) — ไม่ได้เขียนทับให้'); } }
+    }
+    const other = lang === 'en' ? 'ja' : 'en', okey = l => l === 'ja' ? 'vocabApp.ja.v1' : 'vocabApp.v1';
+    const before = SYNC.stable(SYNC.canon(db));
+    if (remote && remote[lang]) SYNC.mergeDb(db, remote[lang], uid);
+    let od = null; try { od = JSON.parse(lsGet(okey(other)) || 'null'); } catch { }
+    let odChanged = false;
+    if (remote && remote[other]) {
+      if (od) { const b = SYNC.stable(SYNC.canon(od)); SYNC.mergeDb(od, remote[other], uid); odChanged = SYNC.stable(SYNC.canon(od)) !== b; }
+      else { od = { ...remote[other] }; if (other === 'ja') od.settings = { newPerDay: 15, autoFill: false, dailyGoal: 25 }; odChanged = true; }
+    }
+    const changedLocal = SYNC.stable(SYNC.canon(db)) !== before;
+    if (changedLocal) { SYNC.snapshot(db.cards, syncSig); save(); } // snapshot ก่อน save เพื่อไม่ให้ผลรวมถูกประทับเวลาใหม่
+    if (odChanged) lsSet(okey(other), JSON.stringify(od));
+    const body = SYNC.stable({ v: 1, en: SYNC.canon(lang === 'en' ? db : od), ja: SYNC.canon(lang === 'ja' ? db : od) });
+    if (body !== remoteText) {
+      const files = { [GIST_FILE]: { content: body } };
+      if (gid) await ghApi('/gists/' + gid, { method: 'PATCH', body: JSON.stringify({ files }) });
+      else gid = (await ghApi('/gists', { method: 'POST', body: JSON.stringify({ description: GIST_DESC, public: false, files }) })).id;
+    }
+    lsSet(SYNC_GIST, gid); lsSet(SYNC_LAST, String(Date.now()));
+    if (changedLocal && refresh) { curId = null; renderHud(); showTab(tab); toast('ซิงก์แล้ว: ได้ข้อมูลใหม่จากอีกเครื่อง'); }
+    renderSyncPanel();
+  } catch (e) { syncStatus('❌ ' + e.message, true); }
+  syncBusy = false;
+}
+function renderSyncPanel() {
+  const on = syncOn(); if (!$('#sync-off')) return;
+  $('#sync-off').hidden = on; $('#sync-on').hidden = !on;
+  const last = +lsGet(SYNC_LAST) || 0;
+  if (on) syncStatus(last ? `✅ เปิดซิงก์อยู่ · ซิงก์ล่าสุด ${new Date(last).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}` : '✅ เปิดซิงก์อยู่ · ยังไม่เคยซิงก์สำเร็จ'); else syncStatus('ยังไม่ได้เปิดซิงก์');
+}
+document.addEventListener('visibilitychange', () => { if (syncOn()) syncNow(!document.hidden); });
+window.addEventListener('online', () => syncNow(false));
+
 /* ---------- ย้ายเครื่อง: ลิงก์ #pair=… (key + การ์ด/ความคืบหน้า) ----------
    ข้อมูลอยู่ใน "ส่วนหลัง #" ของลิงก์ ซึ่งเบราว์เซอร์ไม่ส่งไปที่เซิร์ฟเวอร์ (GitHub ไม่เห็น) แต่ใครมีลิงก์ก็ได้ key ไป
    ฝั่งรับต้องกดยืนยันเสมอ และตรวจรูปแบบทุกอย่างก่อนเขียนลงเครื่อง */
@@ -2745,7 +2816,7 @@ const b64u = {
 async function streamBytes(u8, Ctor, mode) { const s = new Blob([u8]).stream().pipeThrough(new Ctor(mode)); return new Uint8Array(await new Response(s).arrayBuffer()); }
 async function pairEncode(withKey, withData) {
   const ls = {};
-  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!k || !k.startsWith('vocabApp.')) continue; if (k === LS_KEY && !withKey) continue; if (PAIR_DB_KEYS.includes(k) && !withData) continue; ls[k] = localStorage.getItem(k); } } catch { }
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!k || !k.startsWith('vocabApp.')) continue; if ((k === LS_KEY || k === SYNC_TOKEN) && !withKey) continue; if (k === SYNC_LAST) continue; if (PAIR_DB_KEYS.includes(k) && !withData) continue; ls[k] = localStorage.getItem(k); } } catch { }
   const raw = new TextEncoder().encode(JSON.stringify({ v: 1, t: Date.now(), ls }));
   if (typeof CompressionStream === 'function') return 'g.' + b64u.enc(await streamBytes(raw, CompressionStream, 'gzip'));
   return 'r.' + b64u.enc(raw);
@@ -2758,6 +2829,9 @@ async function pairDecode(code) {
   for (const [k, v] of Object.entries(d.ls)) {
     if (!/^vocabApp\.[A-Za-z0-9._-]{1,40}$/.test(k) || typeof v !== 'string' || v.length > 6e6) { bad.push(k); continue; }
     if (k === LS_KEY && !/^[\w-]{20,100}$/.test(v)) { bad.push(k); continue; }
+    if (k === SYNC_TOKEN && !/^(ghp|gho|github_pat)_[A-Za-z0-9_]{20,255}$/.test(v)) { bad.push(k); continue; }
+    if (k === SYNC_GIST && !/^[0-9a-f]{20,40}$/.test(v)) { bad.push(k); continue; }
+    if (k === SYNC_LAST) { bad.push(k); continue; }
     if (PAIR_DB_KEYS.includes(k)) { try { const o = JSON.parse(v); if (!o || !Array.isArray(o.cards)) { bad.push(k); continue; } } catch { bad.push(k); continue; } }
     ls[k] = v;
   }
@@ -2779,7 +2853,7 @@ async function pairCheck() {
   const ks = Object.keys(p.ls); if (!ks.length) return alert('ลิงก์นี้ไม่มีข้อมูลที่ใช้ได้' + (p.bad.length ? ' (ถูกตัดทิ้งเพราะรูปแบบไม่ถูกต้อง)' : ''));
   const cnt = k => { try { return JSON.parse(p.ls[k]).cards.length; } catch { return 0; } };
   const mine = (() => { let n = 0; for (const k of PAIR_DB_KEYS) { try { n += (JSON.parse(lsGet(k) || '{}').cards || []).filter(c => c.reps > 0).length; } catch { } } return n; })();
-  const lines = [LS_KEY in p.ls ? '• Gemini key' : '', p.ls['vocabApp.v1'] ? `• การ์ดอังกฤษ ${cnt('vocabApp.v1')} ใบ + ความคืบหน้า` : '', p.ls['vocabApp.ja.v1'] ? `• การ์ดญี่ปุ่น ${cnt('vocabApp.ja.v1')} ใบ + ความคืบหน้า` : '', ks.some(k => !PAIR_DB_KEYS.includes(k) && k !== LS_KEY) ? '• การตั้งค่าอื่นๆ' : ''].filter(Boolean).join('\n');
+  const lines = [LS_KEY in p.ls ? '• Gemini key' : '', SYNC_TOKEN in p.ls ? '• โทเคนซิงก์ GitHub (จะซิงก์การ์ดกับ Gist ของบัญชีนั้นอัตโนมัติ)' : '', p.ls['vocabApp.v1'] ? `• การ์ดอังกฤษ ${cnt('vocabApp.v1')} ใบ + ความคืบหน้า` : '', p.ls['vocabApp.ja.v1'] ? `• การ์ดญี่ปุ่น ${cnt('vocabApp.ja.v1')} ใบ + ความคืบหน้า` : '', ks.some(k => !PAIR_DB_KEYS.includes(k) && k !== LS_KEY && k !== SYNC_TOKEN && k !== SYNC_GIST) ? '• การตั้งค่าอื่นๆ' : ''].filter(Boolean).join('\n');
   const warn = mine && ks.some(k => PAIR_DB_KEYS.includes(k)) ? `\n\n⚠️ เครื่องนี้มีการ์ดที่เคยเรียนแล้ว ${mine} ใบ จะถูกแทนที่ด้วยข้อมูลจากลิงก์ (ถ้าไม่แน่ใจ ให้กดยกเลิก แล้วส่งออกแบ็กอัปเก็บไว้ก่อน)` : '';
   if (!confirm(`พบข้อมูลย้ายเครื่อง จะนำเข้า:\n${lines}${warn}\n\nนำเข้าตอนนี้ไหม? (ยกเลิก = ไม่เปลี่ยนอะไร)`)) return;
   pairing = true;
@@ -2791,6 +2865,7 @@ async function pairCheck() {
 pairCheck();
 save(); applyLangUI(); renderHud(); showTab('study'); maybeAutoFill();
 // PWA: ติดตั้งลงหน้าจอโฮม/ใช้ออฟไลน์ ได้เมื่อเปิดผ่าน https หรือ localhost เท่านั้น
+if (syncOn()) setTimeout(() => syncNow(true), 800);
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => { });
 }
