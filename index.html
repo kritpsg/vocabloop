@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f5bea">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VocabLoop">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<title>VocabLoop – IELTS & DET Flashcards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=44">
+</head>
+<body>
+<header class="top">
+  <div class="brand">VocabLoop <small>IELTS · DET</small></div>
+  <nav id="tabs">
+    <button data-tab="study" class="on"><span class="ni">🃏</span><span class="nl">ทบทวน</span></button>
+    <button data-tab="game"><span class="ni">🎮</span><span class="nl">เกม</span></button>
+    <button data-tab="practice" class="en-only"><span class="ni">✍️</span><span class="nl">ฝึก</span></button>
+    <button data-tab="read"><span class="ni">📖</span><span class="nl">อ่าน</span></button>
+    <button data-tab="library"><span class="ni">📚</span><span class="nl">คลังคำ</span></button>
+    <button data-tab="ai"><span class="ni">✨</span><span class="nl">AI</span></button>
+    <button data-tab="settings"><span class="ni">⚙️</span><span class="nl">ตั้งค่า</span></button>
+  </nav>
+  <div class="langsw" role="group" aria-label="เลือกภาษาที่เรียน"><button data-act="lang" data-v="en" class="on" aria-label="English">EN</button><button data-act="lang" data-v="ja" aria-label="ภาษาญี่ปุ่น" class="jp">日本語</button></div>
+</header>
+<div id="hud" class="hud"></div>
+
+<main>
+  <!-- ทบทวน -->
+  <section id="view-study"></section>
+
+  <!-- เกม -->
+  <section id="view-game" hidden></section>
+
+  <!-- อ่านบทความ -->
+  <section id="view-read" hidden></section>
+
+  <!-- ฝึก: แต่งประโยค / แกรมม่า -->
+  <section id="view-practice" hidden></section>
+
+  <!-- คลังคำ -->
+  <section id="view-library" hidden>
+    <div class="seg" id="lib-seg"><button data-act="lib-view" data-v="list" class="on">📚 รายการคำ</button><button data-act="lib-view" data-v="progress">📈 ความคืบหน้า</button></div>
+    <div id="lib-progress" hidden></div>
+    <div id="lib-listwrap">
+      <div class="toolbar">
+        <input id="lib-q" type="search" placeholder="ค้นหาคำ / ความหมาย…">
+        <select id="lib-deck">
+          <option value="ALL">ทุกชุด</option><option value="IELTS">IELTS</option><option value="DET">DET</option>
+        </select>
+        <select id="lib-status" aria-label="สถานะ">
+          <option value="ALL">ทุกสถานะ</option><option value="new">ยังไม่เห็น</option><option value="learning">กำลังเรียน</option><option value="young">กำลังจำ</option><option value="mature">จำได้แล้ว</option><option value="leech">พลาดบ่อย</option><option value="use">ใช้เองได้ ✍️</option>
+        </select>
+        <button class="btn primary" data-act="add-card">+ เพิ่มคำ</button>
+      </div>
+      <p id="lib-count" class="muted"></p>
+      <div id="lib-list" class="list"></div>
+    </div>
+  </section>
+
+  <!-- AI -->
+  <section id="view-ai" hidden>
+    <div class="panel">
+      <h2 id="r-h">📖 เจอคำที่ไม่รู้? คลุมแล้ว AI ทำการ์ดให้</h2>
+      <p class="muted" id="r-p">วางประโยคหรือย่อหน้าภาษาอังกฤษที่คุณอ่านเจอ (ข่าว หนังสือ ข้อสอบ) กด "แสดงข้อความ" แล้ว <b>แตะหรือลากคลุมคำที่ไม่รู้</b> คำที่แตะติดกันจะรวมเป็นวลีเดียว AI จะทำการ์ดโดยใช้ประโยคที่คุณเจอเป็นบริบท (ความหมายตรงกับตรงนั้น) และจัดให้ขึ้นเรียนก่อน</p>
+      <textarea id="r-text" rows="4" maxlength="2000" placeholder="วางข้อความภาษาอังกฤษที่นี่…"></textarea>
+      <div class="row">
+        <select id="r-deck" style="width:auto"><option value="IELTS">เก็บเข้าชุด IELTS</option><option value="DET">เก็บเข้าชุด DET</option></select>
+        <button class="btn primary" id="r-show">แสดงข้อความ</button>
+      </div>
+      <div id="r-picker"></div>
+    </div>
+
+    <div class="panel">
+      <h2>🤖 ให้ AI หาคำใหม่เอง (กดทีเดียว)</h2>
+      <p class="muted">ไม่ต้องเลือกอะไร AI จะเลือกหัวข้อที่ยังไม่ได้เรียน ปรับความยากตามผลการเรียนของคุณ (ตอบถูกบ่อยแค่ไหน) หลีกเลี่ยงคำที่คุณมีแล้ว และเพิ่มเข้าคลังให้ทันที</p>
+      <div class="grid">
+        <label>ชุดคำ
+          <select id="a-deck"><option value="AUTO">ให้ AI เลือกชุดที่คำใหม่เหลือน้อย</option><option value="IELTS">IELTS</option><option value="DET">Duolingo English Test</option></select>
+        </label>
+        <label>จำนวนคำ <input id="a-count" type="number" min="5" max="30" value="15"></label>
+      </div>
+      <button class="btn primary" id="a-run">✨ หาคำใหม่ให้เลย</button>
+      <p id="auto-log" class="muted" style="margin-bottom:0"></p>
+    </div>
+
+    <div class="panel">
+      <h2>สร้างชุดคำใหม่ด้วย Gemini</h2>
+      <p class="muted">เลือกหัวข้อกับระดับ แล้วให้ AI คิดคำใหม่ที่ยังไม่มีในคลังของคุณ (พร้อมความหมายไทย ตัวอย่างประโยค คำเหมือน)</p>
+      <div class="grid">
+        <label>ชุดคำ
+          <select id="g-deck"><option value="IELTS">IELTS</option><option value="DET">Duolingo English Test</option></select>
+        </label>
+        <label>หัวข้อ (เว้นว่างได้)
+          <input id="g-topic" list="topics" placeholder="เช่น Environment">
+          <datalist id="topics"></datalist>
+        </label>
+        <label>ระดับ <select id="g-level"></select></label>
+        <label>จำนวนคำ <input id="g-count" type="number" min="3" max="30" value="10"></label>
+      </div>
+      <button class="btn primary" id="g-run">สร้างคำศัพท์</button>
+    </div>
+
+    <div class="panel">
+      <h2>เติมข้อมูลจากคำที่คุณมีอยู่</h2>
+      <p class="muted">วางรายการคำ (คั่นด้วยบรรทัดใหม่หรือเครื่องหมายจุลภาค) แล้วให้ AI ทำการ์ดให้ครบ</p>
+      <div class="grid">
+        <label>ชุดคำ
+          <select id="w-deck"><option value="IELTS">IELTS</option><option value="DET">Duolingo English Test</option></select>
+        </label>
+      </div>
+      <textarea id="w-list" rows="4" placeholder="ubiquitous&#10;mitigate, scarce&#10;take into account"></textarea>
+      <button class="btn primary" id="w-run">ทำการ์ดจากรายการนี้</button>
+    </div>
+
+    <p id="ai-status" class="status" role="status"></p>
+    <div id="ai-results"></div>
+  </section>
+
+  <!-- ตั้งค่า -->
+  <section id="view-settings" hidden>
+    <div class="panel" id="stats"></div>
+
+    <div class="panel">
+      <h2>Gemini API</h2>
+      <label>API key
+        <input id="key" type="password" autocomplete="off" placeholder="วาง API key ที่นี่">
+      </label>
+      <p class="muted">คีย์เก็บในเบราว์เซอร์เครื่องนี้เท่านั้น (localStorage) และส่งตรงถึง Google ไม่ผ่านเซิร์ฟเวอร์อื่น ไม่รวมอยู่ในไฟล์แบ็กอัป ขอคีย์ฟรีได้ที่
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a></p>
+      <label>โมเดล
+        <input id="model" list="models">
+        <datalist id="models"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"></datalist>
+      </label>
+      <div class="row">
+        <button class="btn primary" data-act="save-key">บันทึก</button>
+        <button class="btn" data-act="test-key">ทดสอบการเชื่อมต่อ</button>
+        <button class="btn" data-act="list-models">ดึงโมเดลที่ใช้ได้</button>
+        <button class="btn danger" data-act="clear-key">ลบคีย์</button>
+      </div>
+      <p id="key-status" class="status" role="status"></p>
+    </div>
+
+    <div class="panel ja-only">
+      <h2>ภาษาญี่ปุ่น</h2>
+      <label class="check"><input id="showRo" type="checkbox"> แสดงโรมาจิบนหน้าการ์ด (วลี/คำศัพท์) — ปิดไว้เพื่อฝึกอ่านคะนะ</label>
+      <div class="row">
+        <button class="btn" data-act="plan-open">📅 ดูแผน 30 วัน</button>
+        <button class="btn" data-act="plan-next">⏩ ปลดล็อกบทเรียนวันถัดไป</button>
+        <button class="btn danger" data-act="plan-reset">เริ่มแผนใหม่</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>การเรียน</h2>
+      <label>คำใหม่ต่อวัน <input id="newPerDay" type="number" min="0" max="200"></label>
+      <label class="en-only">วิธีทบทวนคำ
+        <select id="recall"><option value="mixed">ผสม (แนะนำ): พิมพ์ตอบสลับพลิกการ์ด</option><option value="type">พิมพ์ตอบทุกใบ (ฝึกหนัก)</option><option value="flip">พลิกการ์ดอย่างเดียว</option></select>
+      </label>
+      <p class="muted small en-only" style="margin:4px 0 0">การพิมพ์คำตอบเอง (active recall) ทำให้ระบบเห็นว่าคุณ “จำได้จริง” และไม่ต้องประเมินตัวเองซึ่งมักสูงเกินจริง · ปิด/เปิดได้ตามชอบ</p>
+      <label>เป้าหมายต่อวัน (จำนวนครั้งที่ทบทวน/ตอบเกม) <input id="dailyGoal" type="number" min="1" max="500"></label>
+      <label class="check"><input id="sound" type="checkbox"> เสียงเอฟเฟกต์ในเกม</label>
+      <label class="check"><input id="autoFill" type="checkbox"> ให้ AI หาคำใหม่เติมคลังให้อัตโนมัติ เมื่อคำที่ยังไม่เคยเรียนเหลือน้อยกว่า "คำใหม่ต่อวัน" (ใช้โควตา Gemini ประมาณ 1 ครั้งต่อรอบ)</label>
+      <label class="check"><input id="autoSpeak" type="checkbox"> อ่านออกเสียงอัตโนมัติเมื่อขึ้นการ์ดใหม่</label>
+    </div>
+
+    <div class="panel en-only">
+      <h2>📊 ผลการอ่าน (.md)</h2>
+      <p class="muted">ทุกครั้งที่ทำโจทย์อ่านเสร็จ ระบบจะสร้างไฟล์ผลลัพธ์ภาษาไทยเป็น Markdown (ผิดอะไร ควรทำซ้ำไหม คำศัพท์ที่ควรรู้) เลือกโฟลเดอร์ไว้ครั้งเดียว แล้วระบบจะเขียนไฟล์ให้เองทุกครั้ง พร้อมอัปเดต <code>_overview.md</code> (รายงานรวม) เหมาะกับการเอาไปให้ Claude/AI วิเคราะห์ต่อ</p>
+      <p id="rep-dir-status" class="status" role="status"></p>
+      <label class="check"><input id="autoReport" type="checkbox"> บันทึกไฟล์ .md อัตโนมัติเมื่อทำโจทย์เสร็จ</label>
+      <div class="row">
+        <button class="btn" data-act="pick-dir">📁 เลือกโฟลเดอร์เก็บผล</button>
+        <button class="btn" data-act="rep-overview">📄 ดู/ดาวน์โหลดรายงานรวม</button>
+        <button class="btn primary" data-act="ai-analyze">🧠 ให้ AI วิเคราะห์ผลการอ่านของฉัน</button>
+      </div>
+      <div id="ai-advice" class="pr" hidden></div>
+    </div>
+
+    <div class="panel">
+      <h2>ข้อมูล</h2>
+      <div class="row">
+        <button class="btn" data-act="export">ส่งออกแบ็กอัป (JSON)</button>
+        <label class="btn">นำเข้า <input id="import" type="file" accept="application/json" hidden></label>
+        <button class="btn" data-act="restore-seed">เพิ่มคำเริ่มต้นที่หายไป</button>
+        <button class="btn en-only" data-act="bulk-exth">🌐 เติมคำแปลประโยคให้การ์ดที่ยังไม่มี (AI)</button>
+        <button class="btn danger" data-act="reset-progress">รีเซ็ตความคืบหน้า</button>
+      </div>
+      <p id="bulk-status" class="status en-only" role="status"></p>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog" id="card-form">
+    <h3 id="dlg-title">การ์ด</h3>
+    <div class="grid">
+      <label>ชุดคำ <select id="f-deck"><option value="IELTS">IELTS</option><option value="DET">DET</option></select></label>
+      <label>คำ <input id="f-word" required></label>
+      <label>ชนิดคำ <input id="f-pos" placeholder="noun / verb / adjective…"></label>
+      <label class="en-only">IPA <input id="f-ipa" placeholder="/…/"></label>
+      <label class="ja-only">คำอ่าน (ฮิรางานะ) <input id="f-rd" class="jp" placeholder="ありがとう"></label>
+    </div>
+    <label>ความหมายไทย <input id="f-th"></label>
+    <label>นิยามอังกฤษ <input id="f-def"></label>
+    <label>ตัวอย่างประโยค <textarea id="f-ex" rows="2"></textarea></label>
+    <label class="ja-only">คำอ่านประโยคตัวอย่าง (ฮิรางานะ) <input id="f-exRd" class="jp"></label>
+    <label>คำแปลประโยคตัวอย่าง (ไทย) <textarea id="f-exTh" rows="2"></textarea></label>
+    <label class="en-only">คำเหมือน <input id="f-syn" placeholder="คั่นด้วยจุลภาค"></label>
+    <label>💡 ตัวช่วยจำ (เขียนเองหรือให้ AI ช่วย) <input id="f-mn" placeholder="เช่น เชื่อมเสียงกับคำไทย หรือแต่งเรื่องสั้นๆ"></label>
+    <div class="row">
+      <button type="button" class="btn" data-act="ai-fill">เติมที่ว่างด้วย AI</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn danger" id="f-del" data-act="del-card">ลบ</button>
+      <button type="button" class="btn" data-act="close-dlg">ยกเลิก</button>
+      <button type="submit" class="btn primary" value="save">บันทึก</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-analyze">
+  <h3>🕵️ นักสืบ Tense</h3>
+  <div id="an-body"></div>
+  <div class="row"><span class="spacer"></span><button class="btn primary" data-act="close-analyze">ปิด</button></div>
+</dialog>
+
+<dialog id="dlg-report">
+  <h3 id="rep-title">รายงาน</h3>
+  <textarea id="rep-text" rows="18" readonly class="mono"></textarea>
+  <div class="row"><button class="btn" data-act="rep-copy">📋 คัดลอก</button><button class="btn" data-act="rep-dl">⬇️ ดาวน์โหลด .md</button><span class="spacer"></span><button class="btn primary" data-act="rep-close">ปิด</button></div>
+</dialog>
+
+<dialog id="dlg-plan">
+  <h3>📅 แผน 30 วัน พูด อ่าน เขียนญี่ปุ่นเบื้องต้น</h3>
+  <p class="muted">บทเรียนของแต่ละวันจะปลดล็อกตามวัน (นับจากวันที่เริ่ม) ถ้าอยากเร็วขึ้นกด "ปลดล็อกวันถัดไป" ได้</p>
+  <div id="plan-list"></div>
+  <div class="row"><span class="spacer"></span><button class="btn primary" data-act="close-plan">ปิด</button></div>
+</dialog>
+
+<dialog id="dlg-write">
+  <h3>✍️ ฝึกเขียน <span id="wr-title" class="jp"></span></h3>
+  <p class="muted">เขียนตามตัวอักษรจางๆ ด้วยนิ้วหรือเมาส์ แล้วกด "เทียบกับตัวจริง" เพื่อดูว่าสัดส่วนและเส้นใกล้เคียงแค่ไหน</p>
+  <div class="wr-wrap" id="wr-wrap"><div class="wr-ghost jp" id="wr-ghost"></div><canvas id="wr-canvas" aria-label="พื้นที่เขียน"></canvas></div>
+  <div class="row">
+    <button class="btn" data-act="wr-clear">ล้าง</button>
+    <button class="btn" data-act="wr-guide">👁 เส้นนำ</button>
+    <button class="btn" data-act="wr-compare">เทียบกับตัวจริง</button>
+    <span class="spacer"></span>
+    <a id="wr-link" class="btn" target="_blank" rel="noopener" hidden>ดูลำดับเส้น</a>
+    <button class="btn primary" data-act="wr-close">เสร็จแล้ว</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="seed.js?v=44"></script>
+<script src="seed_th.js?v=44"></script>
+<script src="grammar_course.js?v=44"></script>
+<script src="awl.js?v=44"></script>
+<script src="reading_seed.js?v=44"></script>
+<script src="ja_data.js?v=44"></script>
+<script src="app.js?v=44"></script>
+</body>
+</html>
