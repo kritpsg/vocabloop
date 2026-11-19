@@ -79,6 +79,7 @@ function load() {
   return d;
 }
 let pairing = false, syncTimer = null, syncBusy = false;
+const KEY_RE = /^[\w.~+\/=-]{20,200}$/; // Gemini key (รวมรูปแบบใหม่ที่มีจุด)
 const SYNC_TOKEN = 'vocabApp.syncToken', SYNC_GIST = 'vocabApp.syncGist', SYNC_LAST = 'vocabApp.syncLast', SYNC_KEYFLAG = 'vocabApp.syncKey', KEY_AT = 'vocabApp.keyAt', KEY_SEEN = 'vocabApp.keySeen';
 const syncSig = new Map();
 let db = load();
@@ -2779,7 +2780,7 @@ async function syncNow(refresh) {
       const lk = lsGet(LS_KEY) || '', rk = remote && remote.key;
       if (lk && lk !== lsGet(KEY_SEEN)) { lsSet(KEY_AT, String(Date.now())); lsSet(KEY_SEEN, lk); }
       const lat = +lsGet(KEY_AT) || 0;
-      if (rk && typeof rk.v === 'string' && /^[\w-]{20,100}$/.test(rk.v) && rk.v !== lk && (!lk || (+rk.t || 0) > lat)) { lsSet(LS_KEY, rk.v); lsSet(KEY_SEEN, rk.v); lsSet(KEY_AT, String(+rk.t || Date.now())); keyAdopted = true; }
+      if (rk && typeof rk.v === 'string' && KEY_RE.test(rk.v) && rk.v !== lk && (!lk || (+rk.t || 0) > lat)) { lsSet(LS_KEY, rk.v); lsSet(KEY_SEEN, rk.v); lsSet(KEY_AT, String(+rk.t || Date.now())); keyAdopted = true; }
       const cur = lsGet(LS_KEY); keyOut = cur ? { v: cur, t: +lsGet(KEY_AT) || Date.now() } : (rk || undefined);
     }
     const other = lang === 'en' ? 'ja' : 'en', okey = l => l === 'ja' ? 'vocabApp.ja.v1' : 'vocabApp.v1';
@@ -2839,7 +2840,7 @@ async function pairDecode(code) {
   const ls = {}, bad = [];
   for (const [k, v] of Object.entries(d.ls)) {
     if (!/^vocabApp\.[A-Za-z0-9._-]{1,40}$/.test(k) || typeof v !== 'string' || v.length > 6e6) { bad.push(k); continue; }
-    if (k === LS_KEY && !/^[\w-]{20,100}$/.test(v)) { bad.push(k); continue; }
+    if (k === LS_KEY && !KEY_RE.test(v)) { bad.push(k); continue; }
     if (k === SYNC_TOKEN && !/^(ghp|gho|github_pat)_[A-Za-z0-9_]{20,255}$/.test(v)) { bad.push(k); continue; }
     if (k === SYNC_GIST && !/^[0-9a-f]{20,40}$/.test(v)) { bad.push(k); continue; }
     if (k === SYNC_LAST || k === KEY_AT || k === KEY_SEEN) { bad.push(k); continue; }
@@ -2865,8 +2866,9 @@ async function pairCheck() {
   const cnt = k => { try { return JSON.parse(p.ls[k]).cards.length; } catch { return 0; } };
   const mine = (() => { let n = 0; for (const k of PAIR_DB_KEYS) { try { n += (JSON.parse(lsGet(k) || '{}').cards || []).filter(c => c.reps > 0).length; } catch { } } return n; })();
   const lines = [LS_KEY in p.ls ? '• Gemini key' : '', SYNC_TOKEN in p.ls ? '• โทเคนซิงก์ GitHub (จะซิงก์การ์ดกับ Gist ของบัญชีนั้นอัตโนมัติ)' : '', p.ls['vocabApp.v1'] ? `• การ์ดอังกฤษ ${cnt('vocabApp.v1')} ใบ + ความคืบหน้า` : '', p.ls['vocabApp.ja.v1'] ? `• การ์ดญี่ปุ่น ${cnt('vocabApp.ja.v1')} ใบ + ความคืบหน้า` : '', ks.some(k => !PAIR_DB_KEYS.includes(k) && k !== LS_KEY && k !== SYNC_TOKEN && k !== SYNC_GIST) ? '• การตั้งค่าอื่นๆ' : ''].filter(Boolean).join('\n');
+  const dropped = p.bad.length ? `\n\n⚠️ ตัดทิ้ง ${p.bad.length} รายการที่รูปแบบไม่ถูกต้อง (${p.bad.map(k => k.replace('vocabApp.', '')).join(', ')})` : '';
   const warn = mine && ks.some(k => PAIR_DB_KEYS.includes(k)) ? `\n\n⚠️ เครื่องนี้มีการ์ดที่เคยเรียนแล้ว ${mine} ใบ จะถูกแทนที่ด้วยข้อมูลจากลิงก์ (ถ้าไม่แน่ใจ ให้กดยกเลิก แล้วส่งออกแบ็กอัปเก็บไว้ก่อน)` : '';
-  if (!confirm(`พบข้อมูลย้ายเครื่อง จะนำเข้า:\n${lines}${warn}\n\nนำเข้าตอนนี้ไหม? (ยกเลิก = ไม่เปลี่ยนอะไร)`)) return;
+  if (!confirm(`พบข้อมูลย้ายเครื่อง จะนำเข้า:\n${lines}${warn}${dropped}\n\nนำเข้าตอนนี้ไหม? (ยกเลิก = ไม่เปลี่ยนอะไร)`)) return;
   pairing = true;
   for (const [k, v] of Object.entries(p.ls)) lsSet(k, v);
   location.replace(location.pathname + location.search);
