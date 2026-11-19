@@ -2815,6 +2815,8 @@ function renderSyncPanel() {
   $('#sync-off').hidden = on; $('#sync-on').hidden = !on; const sk = $('#sync-key'); if (sk) sk.checked = lsGet(SYNC_KEYFLAG) !== '0';
   const last = +lsGet(SYNC_LAST) || 0;
   if (on) syncStatus(last ? `✅ เปิดซิงก์อยู่ · ซิงก์ล่าสุด ${new Date(last).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}${syncInfo ? ` · การ์ดที่เรียนแล้วในคลาวด์ (รวมของทุกเครื่อง): อังกฤษ ${syncInfo.en}, ญี่ปุ่น ${syncInfo.ja}` : ''}` : '✅ เปิดซิงก์อยู่ · ยังไม่เคยซิงก์สำเร็จ'); else syncStatus('ยังไม่ได้เปิดซิงก์');
+  const kh = $('#sync-keyhint'); if (kh) kh.hidden = !(on && lsGet(SYNC_KEYFLAG) === '0' && !lsGet(LS_KEY));
+  const sv = $('#sync-ver'); if (sv) { const sc = [...document.scripts].find(x => /app\.js/.test(x.src)); sv.textContent = 'เวอร์ชันแอปในเครื่องนี้: ' + ((sc && /v=(\d+)/.exec(sc.src) || [])[1] || '-'); }
   const w = $('#sync-warn'); if (w) { const local = /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname) || location.protocol === 'file:'; w.hidden = !local; w.textContent = `⚠️ คุณเปิดแอปผ่าน ${location.host || 'ไฟล์ในเครื่อง'} ซึ่งเก็บข้อมูลแยกจากเว็บจริง (${PUBLIC_URL}) การเรียนที่นี่จะไม่ขึ้นมือถือ ให้เปิดเว็บจริงบนคอมแทน แล้วใช้ "ลิงก์ย้ายเครื่อง" (ติ๊กรวมการ์ด + ความคืบหน้า) ย้ายข้อมูลเดิมไปครั้งเดียว`; }
 }
 document.addEventListener('visibilitychange', () => { if (syncOn()) syncNow(!document.hidden); });
@@ -2831,7 +2833,7 @@ const b64u = {
 async function streamBytes(u8, Ctor, mode) { const s = new Blob([u8]).stream().pipeThrough(new Ctor(mode)); return new Uint8Array(await new Response(s).arrayBuffer()); }
 async function pairEncode(withKey, withData) {
   const ls = {};
-  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!k || !k.startsWith('vocabApp.')) continue; if ((k === LS_KEY || k === SYNC_TOKEN) && !withKey) continue; if (k === SYNC_LAST || k === KEY_AT || k === KEY_SEEN) continue; if (PAIR_DB_KEYS.includes(k) && !withData) continue; ls[k] = localStorage.getItem(k); } } catch { }
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!k || !k.startsWith('vocabApp.')) continue; if ((k === LS_KEY || k === SYNC_TOKEN) && !withKey) continue; if (k === SYNC_LAST || k === KEY_AT || k === KEY_SEEN || k === SYNC_KEYFLAG) continue; if (PAIR_DB_KEYS.includes(k) && !withData) continue; ls[k] = localStorage.getItem(k); } } catch { }
   const raw = new TextEncoder().encode(JSON.stringify({ v: 1, t: Date.now(), ls }));
   if (typeof CompressionStream === 'function') return 'g.' + b64u.enc(await streamBytes(raw, CompressionStream, 'gzip'));
   return 'r.' + b64u.enc(raw);
@@ -2846,7 +2848,7 @@ async function pairDecode(code) {
     if (k === LS_KEY && !KEY_RE.test(v)) { bad.push(k); continue; }
     if (k === SYNC_TOKEN && !/^(ghp|gho|github_pat)_[A-Za-z0-9_]{20,255}$/.test(v)) { bad.push(k); continue; }
     if (k === SYNC_GIST && !/^[0-9a-f]{20,40}$/.test(v)) { bad.push(k); continue; }
-    if (k === SYNC_LAST || k === KEY_AT || k === KEY_SEEN) { bad.push(k); continue; }
+    if (k === SYNC_LAST || k === KEY_AT || k === KEY_SEEN || k === SYNC_KEYFLAG) { bad.push(k); continue; }
     if (PAIR_DB_KEYS.includes(k)) { try { const o = JSON.parse(v); if (!o || !Array.isArray(o.cards)) { bad.push(k); continue; } } catch { bad.push(k); continue; } }
     ls[k] = v;
   }
