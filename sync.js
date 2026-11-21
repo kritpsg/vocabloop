@@ -68,6 +68,10 @@ const SYNC = (() => {
     local.snap = { ...(remote.snap || {}), ...(local.snap || {}) };
     local.rev = { ...(remote.rev || {}), ...(local.rev || {}) };
     local.sent = unionBy(local.sent, remote.sent, jk);
+    // สมุดความผิดพลาด: รวมตาม id (อีกเครื่องแก้สำเร็จแล้ว = fixed ชนะ)
+    const mm = new Map((local.mist || []).filter(m => m && m.id).map(m => [m.id, m]));
+    for (const m of remote.mist || []) { if (!m || !m.id) continue; const o = mm.get(m.id); if (!o) mm.set(m.id, m); else if (m.fixed && !o.fixed) o.fixed = m.fixed; }
+    local.mist = [...mm.values()].sort((x, y) => num(x.t) - num(y.t) || (x.id < y.id ? -1 : 1)).slice(-600);
     // แกรมม่า/คอร์ส
     const g = local.gram = { topics: {}, miss: [], ...(local.gram || {}) }, rg = remote.gram || {};
     for (const [k, v] of Object.entries(rg.topics || {})) { const o = g.topics[k]; if (!o || num(v && v.n) > num(o.n)) g.topics[k] = v; }
@@ -94,6 +98,7 @@ const SYNC = (() => {
     if (s.passages) s.passages = [...s.passages].sort(bySort(p => String(p && p.id)));
     if (s.attempts) s.attempts = [...s.attempts].sort(bySort(x => num(x && x.date) + '|' + String(x && x.id)));
     if (s.sent) s.sent = [...s.sent].sort(bySort(jk));
+    if (s.mist) s.mist = [...s.mist].sort(bySort(m => num(m && m.t) + '|' + String(m && m.id)));
     if (s.gram && s.gram.miss) s.gram = { ...s.gram, miss: [...s.gram.miss].sort(bySort(jk)) };
     return s;
   }

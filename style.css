@@ -423,3 +423,19 @@ dialog#dlg-analyze{width:min(680px,95vw)}
 .tgridtb code{font-size:.8rem}
 .gtrick{margin:6px 0 0;padding-left:20px;font-size:.9rem;line-height:1.55}
 .tdet{border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin:6px 0}.tdet summary{cursor:pointer;padding:4px 0}
+
+/* --- รายละเอียด Tense / สมุดความผิดพลาด / ฝึกในการ์ด --- */
+.tdetail{margin:10px 0;text-align:left}.tdetail h4{margin:8px 0 4px}
+.cluetb{display:flex;flex-direction:column;gap:4px}
+.cluetb .cl{display:flex;flex-direction:column;gap:2px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.cluetb .cl code{white-space:normal;word-break:break-word;font-size:.82rem}
+.cluetb .cl span{font-size:.88rem;line-height:1.45}
+.tdetail details{margin:6px 0}.tdetail summary{cursor:pointer;padding:4px 0}
+del{color:var(--again);text-decoration:line-through}ins{color:var(--good);text-decoration:none;font-weight:600}
+.mbar{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:8px 10px;margin:6px 0;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;overflow:hidden;cursor:pointer;font:inherit}
+.mbar.on{border-color:var(--brand)}.mbar i{position:absolute;left:0;bottom:0;height:3px;background:var(--brand);opacity:.7}
+.mi{padding:8px 10px;margin:6px 0;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-align:left}.mi.fx{opacity:.6}
+.mlist{margin:6px 0}
+.cpbox{margin:12px 0;padding:10px;border:1px dashed var(--line);border-radius:12px;text-align:left}
+.cpbox .btn.on{border-color:var(--brand);background:var(--brand-soft)}
+#cp-res,#tc-res{margin-top:8px;text-align:left}

@@ -166,6 +166,125 @@ GC.TENSE_TIPS = {
   fut_perf: { look: 'will + have + V3 + by + เวลา เช่น by Friday, by 2030, by the time', memo: 'will have + V3 = "พอถึงเส้นตายนั้น ทำเสร็จเรียบร้อยแล้ว"', tl: { dots: [64], bars: [[64, 84]], flags: [[84, 'by']], note: 'จะเสร็จก่อน/ภายในเส้นตายในอนาคต' } }
 };
 
+/* ---------- รายละเอียดเชิงลึกรายTense: "เมื่อเห็น X → แปลว่า Y" + ตัวที่มักสับสน + ข้อผิดที่คนไทยพลาดบ่อย + คำไทยที่ตรงกัน ---------- */
+GC.TENSE_DETAIL = {
+  pres_simple: {
+    clues: [['always / usually / often / sometimes / never', 'ทำเป็นประจำ (บอกความถี่)'], ['every day / week / on Mondays', 'ทำซ้ำตามรอบเวลา'], ['ไม่มีตัวช่วย + V1 (he/she/it ลงท้าย -s/-es)', 'นิสัย / ข้อเท็จจริง / ความจริงทั่วไป'], ['know, like, want, need, believe, love', 'กริยาบอกสถานะ/ความรู้สึก ใช้ Simple เสมอ ไม่ใช้ -ing'], ['The train leaves at 6. / The class starts at 9.', 'ตารางเวลาที่ตายตัว (ใช้ Simple บอกอนาคตได้)'], ['if / when / as soon as / before / after + Present Simple', 'เวลา/เงื่อนไขของ "อนาคต" ห้ามใส่ will หลังคำเหล่านี้']],
+    vs: [['Present Continuous', 'Simple = เป็นประจำ/จริงเสมอ · Continuous = ตอนนี้/ชั่วคราว: He plays football (ปกติ) · He is playing football (ตอนนี้)']],
+    mistakes: [['She go to school every day.', 'She goes to school every day.', 'ประธาน he/she/it ต้องเติม -s/-es ที่กริยา'], ["She doesn't goes to school.", "She doesn't go to school.", 'หลัง do/does/did กริยาหลักกลับเป็น V1 ไม่เติม s'], ['I am knowing the answer.', 'I know the answer.', 'know เป็นกริยาสถานะ ไม่ใช้ -ing']],
+    thai: 'คำไทยที่มักตรง: "ปกติ / เสมอ / ทุกวัน / มักจะ" และประโยคบอกความจริง เช่น "น้ำเดือดที่ 100 องศา"'
+  },
+  pres_cont: {
+    clues: [['am / is / are + V-ing', 'กำลังทำอยู่ (รูปหลัก)'], ['now / right now / at the moment / currently', 'ตอนนี้'], ['Look! / Listen! / Watch out!', 'สิ่งที่กำลังเกิดตรงหน้า'], ['today / this week / these days', 'ช่วงนี้ (ชั่วคราว ไม่ใช่ถาวร)'], ['always + V-ing: He is always losing his keys.', 'บ่น/หงุดหงิดกับสิ่งที่เกิดซ้ำบ่อยเกินไป'], ['tomorrow / next week + แผนที่นัดไว้แล้ว: I am meeting him tomorrow.', 'แผนอนาคตที่จัดเตรียมแล้ว']],
+    vs: [['Present Simple', 'ถ้าเป็น "ปกติ/ถาวร" ใช้ Simple, ถ้า "ตอนนี้/ชั่วคราว" ใช้ Continuous: I live in Bangkok (ถาวร) · I am living with friends this month (ชั่วคราว)']],
+    mistakes: [['I am go to school now.', 'I am going to school now.', 'หลัง am/is/are ต้องเป็น V-ing ไม่ใช่ V1'], ['I am wanting a coffee.', 'I want a coffee.', 'want / like / need / know ไม่ใช้รูป continuous'], ['She is work now.', 'She is working now.', 'ลืมเติม -ing']],
+    thai: 'คำไทยที่มักตรง: "กำลัง...อยู่" "ตอนนี้" "ช่วงนี้"'
+  },
+  pres_perf: {
+    clues: [['have / has + V3', 'เรื่องในอดีตที่ยังเชื่อมถึงตอนนี้ (รูปหลัก)'], ['already / yet / just / recently / lately', 'เพิ่งเสร็จ / ยังไม่เสร็จ'], ['ever / never / before / so far / many times', 'ประสบการณ์ในชีวิต (ไม่ระบุว่าเมื่อไหร่)'], ['for + ช่วงเวลา · since + จุดเวลา', 'เริ่มในอดีต และยังเป็นอยู่จนถึงตอนนี้'], ['this week / this month / today (ยังไม่จบ)', 'ช่วงเวลาที่ยังไม่สิ้นสุด'], ['มี yesterday / ago / last year / in 2019', '❌ ห้ามใช้ Perfect → ต้องใช้ Past Simple']],
+    vs: [['Past Simple', 'ระบุเวลาที่จบแล้วชัดเจน → Past Simple · ไม่ระบุ/ยังเกี่ยวกับตอนนี้ → Present Perfect'], ['Present Perfect Continuous', 'เน้น "ผลลัพธ์/จำนวน" → Perfect (I have read 3 books) · เน้น "ความต่อเนื่อง/ใช้เวลานาน" → Perfect Continuous (I have been reading all day)']],
+    mistakes: [['I have seen him yesterday.', 'I saw him yesterday.', 'yesterday คือเวลาที่จบแล้ว ใช้ Past Simple'], ['I am here since Monday.', 'I have been here since Monday.', 'since + จุดเวลา ต้องใช้ Perfect ไม่ใช่ Present Simple'], ['She has went home.', 'She has gone home.', 'หลัง have/has ใช้ V3 (gone) ไม่ใช่ V2 (went)']],
+    thai: 'คำไทยที่มักตรง: "เคย...มาแล้ว" "เพิ่ง...แล้ว" "ยังไม่เคย" "...มาตั้งแต่ / ...มา...แล้ว"'
+  },
+  pres_perf_cont: {
+    clues: [['have / has + been + V-ing', 'ทำต่อเนื่องมาจนถึงตอนนี้ (รูปหลัก)'], ['for / since + How long...?', 'เน้นว่าทำมานานแค่ไหน'], ['all day / all morning / lately / recently', 'ทำมาตลอดช่วงนั้น'], ['เห็นผลชัดตอนนี้: "You look tired." "I have been studying."', 'บอกเหตุของสภาพที่เห็นตอนนี้'], ['know / like / want (กริยาสถานะ)', '❌ ไม่ใช้ continuous → ใช้ Present Perfect: I have known her for years']],
+    vs: [['Present Perfect', 'Perfect Continuous เน้นกระบวนการที่ทำต่อเนื่อง · Perfect เน้นผลลัพธ์/ตัวเลข: I have been painting (ทำมานาน) · I have painted 3 rooms (ได้ 3 ห้อง)']],
+    mistakes: [['I have been knowing him for years.', 'I have known him for years.', 'know เป็นกริยาสถานะ ไม่ใช้ continuous'], ['She has been work here since 2020.', 'She has been working here since 2020.', 'been ต้องตามด้วย V-ing'], ['I am studying for 3 hours.', 'I have been studying for 3 hours.', 'for + ระยะเวลาที่ผ่านมาจนถึงตอนนี้ ใช้ Perfect Continuous']],
+    thai: 'คำไทยที่มักตรง: "...มาตลอด" "...มานานแล้ว" "ทำมา...ชั่วโมงแล้ว"'
+  },
+  past_simple: {
+    clues: [['V2 / did + V1 / was-were', 'เรื่องที่จบแล้วในอดีต (รูปหลัก)'], ['yesterday / last week / last year / ago', 'เวลาอดีตที่ระบุชัดเจน'], ['in 2019 / on Monday / at 5 pm yesterday', 'ระบุจุดเวลาที่แน่นอน'], ['when I was a child / when he arrived', 'เล่าเหตุการณ์ในอดีต'], ['He opened the door and walked in.', 'เล่าเรื่องเรียงตามลำดับเหตุการณ์'], ['if + Past Simple: If I had money, I would travel.', 'สมมติที่ไม่จริงตอนนี้ (ไม่ได้แปลว่าอดีต)']],
+    vs: [['Present Perfect', 'บอกเวลาที่จบแล้ว → Past Simple · ไม่บอกเวลา/ยังเกี่ยวกับตอนนี้ → Present Perfect']],
+    mistakes: [['Did you went there?', 'Did you go there?', 'หลัง did กลับเป็น V1'], ["I didn't saw him.", "I didn't see him.", "didn't + V1 เสมอ"], ['I have lived there in 2015.', 'I lived there in 2015.', 'in 2015 คือจุดเวลาที่จบแล้ว']],
+    thai: 'คำไทยที่มักตรง: "เมื่อวาน / เมื่อปีที่แล้ว / ...ที่แล้ว / เมื่อ ... ปีก่อน" (เล่าเรื่องที่รู้ว่าเมื่อไหร่)'
+  },
+  past_cont: {
+    clues: [['was / were + V-ing', 'กำลังทำอยู่ ณ ตอนนั้น (รูปหลัก)'], ['while / as', 'สองเหตุการณ์เกิดพร้อมกันในอดีต'], ['when + เหตุการณ์สั้น: I was cooking when the phone rang.', 'เหตุการณ์ยาว (continuous) ถูกเหตุการณ์สั้น (simple) มาแทรก'], ['at 8 pm yesterday / this time last year', 'ณ เวลานั้นกำลังทำอะไรอยู่'], ['The sun was shining. Birds were singing.', 'ฉากหลังในเรื่องเล่า']],
+    vs: [['Past Simple', 'ทำเสร็จทั้งหมด vs กำลังทำอยู่ช่วงหนึ่ง: I read a book (จบเล่ม) · I was reading a book (กำลังอ่านอยู่ ยังไม่รู้ว่าจบไหม)']],
+    mistakes: [['I was watched TV when you called.', 'I was watching TV when you called.', 'was/were + V-ing ไม่ใช่ V2'], ['While I walked, I was seeing him.', 'While I was walking, I saw him.', 'เหตุการณ์ยาวใช้ continuous เหตุการณ์สั้นใช้ simple'], ['I was knowing the answer.', 'I knew the answer.', 'know ไม่ใช้ continuous']],
+    thai: 'คำไทยที่มักตรง: "ตอนนั้นกำลัง...อยู่" "ขณะที่..." "พอดีกำลัง...อยู่ตอนที่..."'
+  },
+  past_perf: {
+    clues: [['had + V3', 'เกิดก่อนอีกเหตุการณ์หนึ่งในอดีต (รูปหลัก)'], ['before / after / by the time / when + Past Simple', 'มีสองเหตุการณ์ในอดีต ต้องบอกว่าอันไหนก่อน'], ['already / just / never ... before', 'ตอนนั้นเสร็จไปแล้ว / ไม่เคยมาก่อน'], ['He said that he had finished.', 'เล่าต่อ (reported speech) ถอย tense ลงหนึ่งขั้น'], ['If + had + V3 → would have + V3', 'เสียใจเรื่องอดีต: If I had studied, I would have passed.']],
+    vs: [['Past Simple', 'ถ้าเรียงลำดับตามเวลาในประโยคอยู่แล้ว ใช้ Past Simple ได้ ใช้ had เมื่อต้องการเน้นว่า "เสร็จก่อน": When I arrived, the film started (เริ่มหลังฉันมาถึง) · When I arrived, the film had started (เริ่มไปก่อนแล้ว)']],
+    mistakes: [['After he left, I have arrived.', 'After he had left, I arrived.', 'เรื่องในอดีตทั้งคู่ ห้ามใช้ have/has (Present Perfect)'], ['I had went there.', 'I had gone there.', 'had + V3 (gone)'], ['When I got to the station, the train already left.', 'When I got to the station, the train had already left.', 'รถไฟออกก่อนที่ฉันจะถึง ต้องใช้ had']],
+    thai: 'คำไทยที่มักตรง: "...ไปแล้วตอนที่..." "ก่อนที่...จะมาถึง ... ได้...ไปแล้ว"'
+  },
+  past_perf_cont: {
+    clues: [['had + been + V-ing', 'ทำต่อเนื่องมาก่อนอีกเหตุการณ์ในอดีต (รูปหลัก)'], ['for / since + (ก่อนถึงตอนนั้น)', 'บอกว่าทำมานานแค่ไหนก่อนถึงจุดนั้น'], ['She was tired because she had been working all day.', 'เป็นเหตุของสภาพที่เห็นในอดีต']],
+    vs: [['Past Perfect', 'เน้นความต่อเนื่อง/ระยะเวลา → Perfect Continuous · เน้นผลลัพธ์ที่เสร็จ → Past Perfect: He had been writing (ทำมานาน) · He had written the report (เขียนเสร็จ)']],
+    mistakes: [['I had been know him for years.', 'I had known him for years.', 'know ไม่ใช้ continuous'], ['He had been wait for 2 hours when she came.', 'He had been waiting for 2 hours when she came.', 'been + V-ing'], ['We waited for an hour before the bus had arrived.', 'We had been waiting for an hour when the bus arrived.', 'เน้นการรอที่ต่อเนื่องก่อนรถมา']],
+    thai: 'คำไทยที่มักตรง: "ทำมา...แล้วก่อนที่จะ..." "...มานานแล้วตอนที่..."'
+  },
+  fut_simple: {
+    clues: [['will + V1', 'จะ... (รูปหลัก)'], ['I think / I believe / probably / perhaps / maybe', 'คาดเดา/ความเห็นเกี่ยวกับอนาคต'], ['tomorrow / next week / soon / in 2030', 'เวลาในอนาคต'], ["I'll help you. / Shall I...?", 'ตัดสินใจตอนพูด / เสนอตัวช่วย / สัญญา'], ['if + Present Simple, ... will + V1', 'เงื่อนไขที่เป็นไปได้จริง: If it rains, I will stay home.']],
+    vs: [['Be going to', 'will = เพิ่งตัดสินใจตอนพูด/คาดเดา · going to = มีแผนไว้ก่อน/เห็นหลักฐานตอนนี้']],
+    mistakes: [['If it will rain, I stay home.', 'If it rains, I will stay home.', 'ในประโยค if / when ใช้ Present Simple แทน will'], ['He will goes.', 'He will go.', 'will + V1 เสมอ ไม่เติม s'], ['I will to go.', 'I will go.', 'will ไม่ตามด้วย to']],
+    thai: 'คำไทยที่มักตรง: "จะ..." "คงจะ..." "เดี๋ยว...ให้" (ตัดสินใจตอนนั้น)'
+  },
+  fut_goingto: {
+    clues: [['am / is / are + going to + V1', 'แผน/ตั้งใจไว้แล้ว (รูปหลัก)'], ['Look at those clouds! It is going to rain.', 'ทำนายจาก "หลักฐานที่เห็นตรงหน้า"'], ['I have decided / I have planned', 'ตัดสินใจก่อนพูดแล้ว'], ['this weekend / next month + แผน', 'แผนในอนาคตอันใกล้']],
+    vs: [['Future Simple (will)', 'will = ตัดสินใจตอนพูด · going to = วางแผนไว้ก่อนแล้ว: "The phone is ringing." "I\'ll get it." · "I\'m going to study abroad next year."']],
+    mistakes: [['I going to study.', 'I am going to study.', 'ต้องมี am/is/are นำหน้า going to'], ['She is going to goes.', 'She is going to go.', 'going to + V1'], ["It's going rain.", "It's going to rain.", 'ลืม to']],
+    thai: 'คำไทยที่มักตรง: "กำลังจะ..." "ตั้งใจจะ..." "ท่าทางจะ..." (มีเค้า/มีแผน)'
+  },
+  fut_cont: {
+    clues: [['will + be + V-ing', 'ตอนนั้นจะกำลังทำอยู่ (รูปหลัก)'], ['this time tomorrow / at 8 pm tomorrow / next Monday at 9', 'ระบุเวลาในอนาคตว่ากำลังทำอะไร'], ['Will you be using the car tonight?', 'ถามแผนอย่างสุภาพ'], ["I'll be waiting at the gate.", 'บอกว่าจะอยู่ในสภาพนั้นตอนนั้น']],
+    vs: [['Future Simple (will)', 'will work = ตัดสินใจจะทำ · will be working = ถึงเวลานั้นจะกำลังทำอยู่ (ไม่ได้เพิ่งตัดสินใจ)']],
+    mistakes: [['I will be work at 8 pm.', 'I will be working at 8 pm.', 'will be + V-ing'], ['At 9 tomorrow I will sleeping.', 'At 9 tomorrow I will be sleeping.', 'ลืม be'], ['I will be knowing the result.', 'I will know the result.', 'know ไม่ใช้ continuous']],
+    thai: 'คำไทยที่มักตรง: "ตอนนั้นจะกำลัง...อยู่" "เวลานั้นของพรุ่งนี้ฉันคงกำลัง..."'
+  },
+  fut_perf: {
+    clues: [['will + have + V3', 'ถึงเวลานั้นจะเสร็จแล้ว (รูปหลัก)'], ['by + เวลาอนาคต (by Friday / by 2030 / by then)', 'ภายใน/ก่อนเส้นตาย'], ['By the time + Present Simple: By the time you arrive, I will have left.', 'ประโยคเวลาหลัง by the time ใช้ Present ห้ามใช้ will'], ['in two years / by the end of the year', 'เป้าหมายที่จะสำเร็จก่อนจุดนั้น']],
+    vs: [['Future Simple (will)', 'will finish = จะลงมือทำให้เสร็จ · will have finished = ถึงเวลานั้นเสร็จไปแล้ว']],
+    mistakes: [['By next year I will graduate.', 'By next year I will have graduated.', 'by + เวลาอนาคตมักใช้ Future Perfect'], ['By the time you will arrive, I will have left.', 'By the time you arrive, I will have left.', 'หลัง by the time ใช้ Present Simple'], ['I will have finish the work.', 'I will have finished the work.', 'have + V3']],
+    thai: 'คำไทยที่มักตรง: "ภายใน...จะ...เสร็จแล้ว" "พอถึง...ก็จะ...ไปแล้ว"'
+  }
+};
+
+/* ---------- ตาราง "เมื่อเห็นคำนี้ → นึกถึง Tense นี้" ---------- */
+GC.TRIGGERS = [
+  ['always / usually / often / sometimes / never', 'pres_simple', 'ความถี่ → ทำเป็นประจำ'],
+  ['every day / every week / on Sundays', 'pres_simple', 'รอบเวลา → ซ้ำเป็นประจำ'],
+  ['now / right now / at the moment / Look! / Listen!', 'pres_cont', 'เกิดตรงหน้าตอนนี้'],
+  ['these days / this week (ช่วงชั่วคราว)', 'pres_cont', 'ช่วงนี้ ไม่ถาวร'],
+  ['already / yet / just / recently / lately', 'pres_perf', 'เพิ่งเสร็จ / ยังไม่เสร็จ'],
+  ['ever / never / before / so far / many times', 'pres_perf', 'ประสบการณ์ในชีวิต'],
+  ['for + ช่วงเวลา (for 3 years) / since + จุดเวลา (since 2019)', 'pres_perf', 'เริ่มในอดีต ยังเป็นอยู่ (ถ้าเน้นความต่อเนื่องใช้ Perfect Continuous)'],
+  ['all day / all morning / How long...? / lately', 'pres_perf_cont', 'ทำต่อเนื่องมาจนถึงตอนนี้'],
+  ['yesterday / last week / last year / ... ago', 'past_simple', 'เวลาอดีตที่ชัดเจน → จบแล้ว'],
+  ['in 2019 / on Monday / when I was a child', 'past_simple', 'จุดเวลาอดีตเฉพาะเจาะจง'],
+  ['while / as (สองเหตุการณ์พร้อมกัน)', 'past_cont', 'กำลังทำอยู่ ณ ตอนนั้น'],
+  ['when + เหตุการณ์สั้น มาแทรกเหตุการณ์ยาว', 'past_cont', 'เหตุการณ์ยาวใช้ continuous, สั้นใช้ simple'],
+  ['at 8 pm yesterday / this time last year', 'past_cont', 'ณ เวลานั้นกำลังทำอะไร'],
+  ['before / after / by the time / already (ในอดีต, มี 2 เหตุการณ์)', 'past_perf', 'เหตุการณ์ที่เกิดก่อน'],
+  ['He said he had... / If I had known...', 'past_perf', 'เล่าต่อ / เสียใจเรื่องอดีต'],
+  ['had been + for/since (ก่อนอีกเหตุการณ์ในอดีต)', 'past_perf_cont', 'ทำมานานก่อนถึงตอนนั้น'],
+  ['tomorrow / next week / soon + I think / probably', 'fut_simple', 'คาดเดา / ตัดสินใจตอนพูด'],
+  ['I\'ll help you / Shall I...? / I promise', 'fut_simple', 'เสนอ / สัญญา'],
+  ['I have decided / I am planning / Look at the clouds!', 'fut_goingto', 'แผนที่วางไว้ / มีหลักฐานตรงหน้า'],
+  ['this time tomorrow / at 8 pm tomorrow', 'fut_cont', 'ตอนนั้นจะกำลังทำอยู่'],
+  ['by Friday / by 2030 / by then / by the end of the year', 'fut_perf', 'จะเสร็จก่อนเส้นตายในอนาคต'],
+  ['if / when / as soon as / before / after + (อนาคต)', 'pres_simple', 'ประโยคเวลา/เงื่อนไขของอนาคต ใช้ Present Simple ห้ามใส่ will'],
+  ['know / like / want / need / believe', 'pres_simple', 'กริยาสถานะ ไม่ใช้รูป -ing (ทุก tense)']
+];
+
+/* ---------- โจทย์แต่งประโยคตาม Tense (เป็นสถานการณ์ภาษาไทย ให้แต่งเป็นอังกฤษ) ---------- */
+GC.SCENARIOS = {
+  pres_simple: ['เล่ากิจวัตรตอนเช้าของคุณ (อย่างน้อย 1 ประโยคที่ขึ้นต้นด้วย He/She)', 'พูดข้อเท็จจริงทั่วไปที่คุณรู้ เช่น เรื่องธรรมชาติหรือวิทยาศาสตร์'],
+  pres_cont: ['บอกว่าตอนนี้คุณกำลังทำอะไรอยู่ (ใช้ now หรือ at the moment)', 'เล่าสิ่งที่คุณกำลังเรียน/ทำในช่วงนี้ (ช่วงชั่วคราว)'],
+  pres_perf: ['เล่าประสบการณ์ที่คุณเคยทำมาแล้ว (ใช้ ever หรือ never)', 'บอกว่าคุณเพิ่งทำอะไรเสร็จ หรือยังไม่ได้ทำอะไร (ใช้ just / already / yet)'],
+  pres_perf_cont: ['บอกว่าคุณเรียน/ทำงาน/อาศัยอยู่ที่ใดมานานเท่าไหร่แล้ว และยังทำอยู่ (ใช้ for หรือ since)', 'อธิบายว่าทำไมวันนี้คุณถึงเหนื่อย (เพราะทำอะไรมาทั้งวัน)'],
+  past_simple: ['เล่าสิ่งที่คุณทำเมื่อวาน (ใช้ yesterday)', 'เล่าเหตุการณ์ในอดีตที่ระบุปีหรือเวลา เช่น in 2020'],
+  past_cont: ['บอกว่าเมื่อวานตอน 8 โมงเย็นคุณกำลังทำอะไรอยู่', 'เล่าว่าคุณกำลังทำอะไรอยู่ตอนที่มีเหตุการณ์หนึ่งมาแทรก (ใช้ when หรือ while)'],
+  past_perf: ['เล่าว่าเมื่อคุณไปถึงที่ไหนสักแห่ง มีอะไรเสร็จไปแล้วก่อนหน้านั้น (ใช้ had)', 'บอกสิ่งที่คุณไม่เคยทำมาก่อนจนกระทั่งปีที่แล้ว'],
+  past_perf_cont: ['บอกว่าก่อนที่ใครคนหนึ่งจะมาถึง คุณทำอะไรมานานแค่ไหนแล้ว (ใช้ had been ... for)', 'อธิบายว่าทำไมเมื่อวานคุณถึงเหนื่อย (เพราะทำอะไรมาก่อนหน้านั้น)'],
+  fut_simple: ['ทำนายสิ่งที่จะเกิดขึ้นในอีก 10 ปี (ใช้ I think ... will)', 'เสนอตัวช่วยเพื่อนหรือให้สัญญากับใครสักคน'],
+  fut_goingto: ['เล่าแผนที่คุณตั้งใจจะทำสุดสัปดาห์นี้หรือเดือนหน้า', 'มองสิ่งที่เห็นอยู่ตรงหน้าแล้วทำนายว่าจะเกิดอะไรต่อ (เช่น ท้องฟ้ามืดครึ้ม)'],
+  fut_cont: ['บอกว่าพรุ่งนี้เวลา 9 โมงเช้า คุณน่าจะกำลังทำอะไรอยู่', 'บอกว่าปีหน้าช่วงเวลานี้คุณจะกำลังทำอะไรอยู่'],
+  fut_perf: ['บอกสิ่งที่คุณจะทำเสร็จภายในสิ้นปีนี้ (ใช้ by)', 'บอกว่าภายในอีก 5 ปีคุณจะบรรลุอะไรไปแล้ว']
+};
+
 /* ---------- วิธีจำที่ใช้ในแอป + งานวิจัย (ตรวจลิงก์จากการค้นหา 2026-11-19; หลักฐานเฉพาะเรื่อง Tense ยังมีน้อย) ---------- */
 GC.RESEARCH = [
   { m: 'เส้นเวลา (timeline) ประกอบทุก Tense', why: 'งานทดลองขนาดเล็กหลายชิ้นพบว่าผู้เรียนที่ใช้เส้นเวลาเข้าใจความต่างของ Tense ชัดกว่าการเรียนด้วยกฎล้วนๆ', caveat: 'ส่วนใหญ่กลุ่มตัวอย่างเล็ก ทดสอบระยะสั้น ยังไม่ชี้ว่าจำได้นานแค่ไหน', src: 'Visual Timelines-based Technique … Saudi EFL Learners (World Journal of English Language)', url: 'https://www.sciedupress.com/journal/index.php/wjel/article/view/24861' },
@@ -248,11 +367,11 @@ GC.allExamples = () => GC.LESSONS.filter(l => l.tense).flatMap(l => l.ex.map(([t
           if (moved) { for (;;) { skipAdv(); if (j < n && aux(j) && kindOf(T[j].w) !== 'do') { chain.push(j); j++; } else break; } skipAdv(); }
         }
         if (verbAt(j)) verb = j;
-        else if (j < n && T[j].l === 'going' && j + 1 < n && T[j + 1].l === 'to') { verb = -2; }
+        if (j < n && T[j].l === 'going' && j + 1 < n && T[j + 1].l === 'to') { let q0 = j + 2; while (q0 < n && adv(q0)) q0++; var gtV = q0 < n && (T[q0].l === 'be' || T[q0].l === 'have' || formsOf(T[q0].l).has('v1')); if (verb < 0 && gtV) verb = -2; } else var gtV = false;
         const words = chain.map(k => T[k].w);
         // be going to
         const last = words[words.length - 1];
-        if (verb === -2 || (last && (last === 'am' || last === 'is' || last === 'are' || last === 'was' || last === 'were') && j < n && T[j].l === 'going' && j + 1 < n && T[j + 1].l === 'to')) {
+        if (verb === -2 || (last && (last === 'am' || last === 'is' || last === 'are' || last === 'was' || last === 'were') && gtV)) {
           let vi = -1, q = j + 2; while (q < n && adv(q)) q++; if (q < n && formsOf(T[q].l).has('v1')) vi = q;
           const past = last === 'was' || last === 'were';
           const idxs = [...chain, j, j + 1, ...(vi >= 0 ? [vi] : [])];
