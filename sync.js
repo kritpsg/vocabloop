@@ -72,6 +72,11 @@ const SYNC = (() => {
     const mm = new Map((local.mist || []).filter(m => m && m.id).map(m => [m.id, m]));
     for (const m of remote.mist || []) { if (!m || !m.id) continue; const o = mm.get(m.id); if (!o) mm.set(m.id, m); else if (m.fixed && !o.fixed) o.fixed = m.fixed; }
     local.mist = [...mm.values()].sort((x, y) => num(x.t) - num(y.t) || (x.id < y.id ? -1 : 1)).slice(-600);
+    // เรียงความ + ร่างล่าสุด (ร่างที่ใหม่กว่าชนะ; ร่างว่าง = ถูกล้างแล้ว)
+    const em = new Map((local.essays || []).filter(e => e && e.id).map(e => [e.id, e]));
+    for (const e of remote.essays || []) if (e && e.id && !em.has(e.id)) em.set(e.id, e);
+    local.essays = [...em.values()].sort((x, y) => num(x.t) - num(y.t) || (x.id < y.id ? -1 : 1)).slice(-30);
+    if (remote.essayDraft && (!local.essayDraft || num(remote.essayDraft.t) > num(local.essayDraft.t))) local.essayDraft = remote.essayDraft;
     // แกรมม่า/คอร์ส
     const g = local.gram = { topics: {}, miss: [], ...(local.gram || {}) }, rg = remote.gram || {};
     for (const [k, v] of Object.entries(rg.topics || {})) { const o = g.topics[k]; if (!o || num(v && v.n) > num(o.n)) g.topics[k] = v; }
@@ -98,6 +103,7 @@ const SYNC = (() => {
     if (s.passages) s.passages = [...s.passages].sort(bySort(p => String(p && p.id)));
     if (s.attempts) s.attempts = [...s.attempts].sort(bySort(x => num(x && x.date) + '|' + String(x && x.id)));
     if (s.sent) s.sent = [...s.sent].sort(bySort(jk));
+    if (s.essays) s.essays = [...s.essays].sort(bySort(m => num(m && m.t) + '|' + String(m && m.id)));
     if (s.mist) s.mist = [...s.mist].sort(bySort(m => num(m && m.t) + '|' + String(m && m.id)));
     if (s.gram && s.gram.miss) s.gram = { ...s.gram, miss: [...s.gram.miss].sort(bySort(jk)) };
     return s;

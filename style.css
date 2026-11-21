@@ -439,3 +439,18 @@ del{color:var(--again);text-decoration:line-through}ins{color:var(--good);text-d
 .cpbox{margin:12px 0;padding:10px;border:1px dashed var(--line);border-radius:12px;text-align:left}
 .cpbox .btn.on{border-color:var(--brand);background:var(--brand-soft)}
 #cp-res,#tc-res{margin-top:8px;text-align:left}
+
+/* --- เครื่องหมาย . , / Essay --- */
+.pdsent{display:flex;flex-wrap:wrap;align-items:center;gap:4px 2px;margin:12px 0;font-size:1.1rem;line-height:2.2}
+.pdsent .pw{padding:0 2px}
+.slot{min-width:34px;height:34px;border-radius:8px;border:1px dashed var(--line);background:var(--bg);color:var(--muted);font:inherit;font-weight:700;cursor:pointer;margin-right:4px}
+.slot.has{border-style:solid;border-color:var(--brand);color:var(--text);background:var(--brand-soft)}
+.slot.ok{border-color:var(--good);color:var(--good)}.slot.bad{border-color:var(--again);color:var(--again);background:transparent}
+.esmeter{margin:8px 0}.esrow{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px}.esrow>div{min-width:90px}
+.chip.okc{border-color:var(--good)}.chip.badc{border-color:var(--again)}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px}.chiprow .chip{font-size:.8rem;padding:4px 8px;white-space:normal;text-align:left;cursor:default}
+.bands{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.bandbig{display:flex;align-items:baseline;gap:8px}.bandbig b{font-size:2.4rem}.bandbig small{color:var(--muted)}
+.bandrow{display:flex;gap:10px;align-items:flex-start}.bandk{min-width:54px;text-align:center;padding:6px;border-radius:10px;border:1px solid var(--line)}.bandk b{display:block;font-size:1.3rem}.bandk small{color:var(--muted)}
+.b-hi{color:var(--good)}.b-mid{color:var(--brand)}.b-lo{color:var(--again)}
+textarea{width:100%;box-sizing:border-box}
